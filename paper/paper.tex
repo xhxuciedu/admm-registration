@@ -39,15 +39,15 @@
 \newcommand{\clip}{\operatorname{clip}}
 \newcommand{\cay}[2]{\mathcal{C}_{#1}(#2)}
 
-\title{\textbf{Search-Free ADMM Parameter Selection for Diffeomorphic Image Registration via Local Spectral Envelopes}}
+\title{\textbf{Local Spectral Envelopes for ADMM Registration: Exact Algebra, a Certificate, and a Negative Parameter-Selection Result}}
 \author{Anonymous Authors}
-\date{Research manuscript draft -- experiments pending}
+\date{Reproducible negative-results report, August 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-The alternating direction method of multipliers (ADMM) is an effective solver for the convex optical-flow subproblems that arise inside iterative diffeomorphic image-registration algorithms, but its speed is highly sensitive to the penalty and over-relaxation parameters. Existing spectral approaches optimize these parameters numerically from the full iteration matrix, which can impose substantial preprocessing cost and must be repeated as image gradients, pyramid levels, and regularization strengths change. We develop a registration-specific, search-free alternative based on local spectral envelopes. The data Hessian is a spatially varying rank-one multiplication operator, whereas common Sobolev regularizers are locally translation invariant and possess explicit Fourier symbols. We freeze the data Hessian on image patches, diagonalize the resulting local ADMM and over-relaxed ADMM (oADMM) iterations exactly in a joint spatial-frequency and image-gradient basis, and reduce each local worst-case factor to finitely many curvature corners. We then prove a perturbation theorem showing that the spectral radius of the full variable-coefficient iteration is bounded by the frozen-patch envelope plus an explicit term proportional to the operator mismatch divided by the ADMM penalty. This yields a certified scalar upper envelope. Its minimizer is obtained without iterative hyperparameter search: for ADMM it lies among patch-envelope intersections, interval boundaries, and roots of explicit quartic equations; for oADMM the optimal relaxation at the selected penalty lies in a finite analytic candidate set. The method therefore replaces gradient-based parameter tuning by one pass of local curvature extraction and finite algebraic candidate evaluation. We specify experiments for synthetic variable-coefficient systems, two- and three-dimensional medical registration benchmarks, and ablations against exact spectral search, residual balancing, and adaptive spectral ADMM. The proposed theory is specialized to registration and does not assume that the full data and regularization Hessians commute.
+We investigate whether local Fourier envelopes can select ADMM penalty and relaxation parameters for quadratic subproblems in diffeomorphic registration without numerical hyperparameter search.  For the precise scaled over-relaxation convention, we prove that the nonzero state spectrum equals that of $(1-\alpha/2)I+(\alpha/2)C_HC_G$.  Frozen constant-coefficient patches therefore have the exact modal factor $1-\alpha+\alpha(\rho^2+hg)/((\rho+h)(\rho+g))$, whose worst value occurs at curvature corners.  A resolvent argument gives the noncommuting certificate $\spr(T)\le U_{\rm LFA}+\alpha(\delta_H+\delta_G)/\rho$, and standard-ADMM minimization reduces to finitely many algebraic roots.  Double-precision tests confirm the identities and certificate.  Constant periodic problems agree with the local envelope to at most $1.0\times10^{-15}$ in our three tested grids.  The central practical hypothesis, however, fails in a predeclared controlled experiment: for all 18 variable-coefficient cases the certified joint selector chooses the lower relaxation boundary ($\alpha=10^{-6}$) and upper penalty boundary ($\rho=100$), giving convergence factors essentially one; its median relative gap to direct joint spectral optimization is 2.904.  The certificate remains valid but is too conservative for tuning.  We therefore report a negative result and stop before real-data registration under the predeclared decision gate.  The algebra, code, configurations, raw results, and failure analysis are released as a reproducible basis for tighter structured perturbation bounds.
 \end{abstract}
 
 \section{Introduction}
@@ -93,6 +93,22 @@ The manuscript deliberately leaves experimental values blank. No empirical resul
 The scaled ADMM iteration and practical residual stopping criteria were systematized by Boyd et al. \cite{Boyd2011}. Ghadimi et al. derived optimal penalties and relaxation parameters for several quadratic classes \cite{Ghadimi2015}. Teixeira et al. studied scaling, preconditioning, and optimal ADMM parameters in distributed quadratic programming \cite{Teixeira2016}. Giselsson and Boyd developed tight contraction bounds and metric selection for Douglas--Rachford splitting and ADMM under strong-convexity and smoothness assumptions \cite{GiselssonBoyd2017}. Adaptive alternatives include residual balancing and Barzilai--Borwein-type spectral updates \cite{Wohlberg2017,Xu2017}.
 
 Song et al. \cite{Song2024} is the closest work. It formulates ADMM/oADMM for general linear quadratic problems, optimizes the penalty from the iteration spectrum, and gives a closed-form relaxation parameter for fixed penalty. It includes diffeomorphic image registration as an application. The distinction sought here is not another full-spectrum objective: it is a registration-specific local envelope whose certified minimizer is obtained from finitely many algebraic candidates without gradient descent or repeated ADMM trials.
+
+\begin{table}[h]
+\centering
+\caption{Adversarial comparison with the closest work.}
+\begin{tabular}{p{0.22\linewidth}p{0.32\linewidth}p{0.36\linewidth}}
+\toprule
+Aspect & Song et al. (2024) & This study\\
+\midrule
+Problem class & General linear quadratic problems & Rank-one registration data term and scalar Sobolev regularizer\\
+Penalty & Numerical one-variable spectral optimization & Finite roots of a certified local envelope\\
+Relaxation & Formula conditional on penalty & Finite piecewise-linear candidates conditional on penalty\\
+Variable coefficients & Full iteration spectrum & Local symbol plus noncommuting norm certificate\\
+Empirical conclusion & Imaging improvements reported & Controlled usefulness gate fails; no real-data claim\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{ADMM and variational diffeomorphic registration}
 DARTEL \cite{Ashburner2007} and diffeomorphic demons \cite{Vercauteren2009} are influential optimization-based registration methods. Thorley et al. proposed a fast diffeomorphic method that composes nonstationary velocity updates and solves arbitrary-order regularized convex subproblems with accelerated ADMM on GPUs \cite{Thorley2021}. Song et al. later used a closely related quadratic registration model to evaluate spectrally optimized ADMM and oADMM \cite{Song2024}.
@@ -462,103 +478,55 @@ The patch-boundary discrepancy $\delta_G$ can be reduced using overlapping patch
 \subsection{Computational complexity}
 For rank-one data blocks, each patch contributes only two distinct data eigenvalues in 2D or two groups in 3D. Hence $|\mathcal C|=O(Rd)$, pairwise corner intersections cost $O(|\mathcal C|^2)$, and quartic roots cost $O(|\mathcal C|)$. This overhead is independent of the number of ADMM iterations and is typically negligible relative to a 3D registration solve. No full $2n\times2n$ or $3n\times3n$ iteration matrix is formed.
 
-\section{Experiments and Results Placeholder}
-This section specifies the experiments required to complete the paper. Numerical entries are intentionally left blank.
+\section{Reproducible Experiments and Results}
+All calculations used IEEE double precision, NumPy 2.2.6 and SciPy 1.15.3.  The seed was 20260806.  Raw JSON/CSV files, the configuration fixed before the controlled run, and generating scripts accompany the paper.  The controlled gate was a median relative spectral-radius gap below 0.10.  We used dense eigendecomposition only on systems of at most 50 unknowns.  Direct joint optimization was a diagnostic differential-evolution calculation (seeded, population multiplier 5, eight generations, followed by polishing), not a proposed selector.
 
 \subsection{Experiment 1: constant-coefficient verification}
-Generate periodic 2D and 3D systems with spatially constant $q$ and transform-diagonalizable $G$. In this setting $\delta=0$ and the LFA spectrum is exact.
-
-\paragraph{Questions.}
-\begin{enumerate}[leftmargin=2em]
-\item Does the implementation reproduce the analytical eigenvalues \eqref{eq:local_eig} to numerical precision?
-\item Does the finite-candidate selector match dense-grid minimization of the exact spectral radius?
-\item Does the conditional $\alpha$ rule match the exact minimizer?
-\end{enumerate}
+We used $n\times n$ periodic grids, data curvatures $(0.2,2.3)$, and first-order regularization with $(\beta,\gamma)=(0.2,0.1)$.  The finite selector returned $(\rho,\alpha)=(0.5435121024,1.8981520705)$ on every grid.
 
 \begin{table}[h]
 \centering
-\caption{Placeholder: constant-coefficient verification.}
-\begin{tabular}{lcccc}
+\caption{Constant-coefficient verification; times are single-process selection times.}
+\begin{tabular}{rccc}
 \toprule
-Dimension & $|\rho_{\mathrm{SF}}-\rho_{\mathrm{opt}}|/\rho_{\mathrm{opt}}$ & Envelope gap & Iteration gap & Runtime overhead\\
+$n$ & Direct radius & Envelope & Selection (ms)\\
 \midrule
-2D & -- & -- & -- & --\\
-3D & -- & -- & -- & --\\
+4 & 0.3531304388434793 & 0.3531304388434793 & 5.0\\
+6 & 0.3531304388434803 & 0.3531304388434793 & 4.6\\
+8 & 0.3531304388434788 & 0.3531304388434793 & 4.6\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Experiment 2: controlled variable coefficients}
-Construct synthetic image-gradient fields with controllable magnitude variation, orientation rotation, and patch discontinuities. Compute the full iteration spectral radius on small grids.
-
-\paragraph{Independent variables.}
-Patch size; $\norm{\nabla H}_\infty$; orientation winding; regularization order; $\gamma$; grid spacing; and overlap.
-
-\paragraph{Primary outcomes.}
-\[
-\text{tightness}=
-\frac{\mathcal U(\rho_{\mathrm{SF}},\alpha_{\mathrm{SF}})}
-{\spr(T_{\rho_{\mathrm{SF}},\alpha_{\mathrm{SF}}})},
-\qquad
-\text{optimality gap}=
-\frac{\spr(T_{\mathrm{SF}})-\spr(T_{\mathrm{opt}})}{\spr(T_{\mathrm{opt}})}.
-\]
-
-\begin{figure}[h]
-\centering
-\fbox{\parbox[c][2in][c]{0.88\linewidth}{\centering Placeholder: true spectral radius, frozen LFA envelope, and certified envelope versus $\rho$ for increasing coefficient variation.}}
-\caption{Planned validation of the perturbation theorem and envelope tightness.}
-\end{figure}
-
-\subsection{Experiment 3: registration subproblems extracted from real data}
-Extract linearized subproblems from multiresolution registration runs on public benchmarks, such as Learn2Reg lung CT and brain MRI tasks \cite{Hering2022}, OASIS brain MRI, and an additional 3D cardiac or thoracic dataset where licensing permits. At selected pyramid levels, explicitly estimate the dominant eigenvalue of the iteration matrix with Arnoldi iterations for comparison only.
-
-\subsection{Experiment 4: end-to-end diffeomorphic registration}
-Embed the selector into a Thorley-style composed velocity-field method \cite{Thorley2021}. Compare:
-\begin{enumerate}[leftmargin=2em]
-\item default ADMM ($\rho=1,\alpha=1$);
-\item residual balancing;
-\item adaptive spectral ADMM \cite{Xu2017};
-\item Song et al. numerical spectral optimization \cite{Song2024};
-\item the proposed standard-ADMM selector;
-\item the proposed oADMM selector.
-\end{enumerate}
-
-Report total wall-clock time, parameter-selection time, ADMM iterations, linear-system solves, Dice, target-registration error where landmarks exist, Hausdorff distance, percentage of nonpositive Jacobian determinants, and memory usage.
+We varied grid size (4 and 5), gradient magnitude contrast (1, 4, and 16), and orientation winding (0, 1, and 3), for 18 preconfigured cases.  A single mean-Hessian patch deliberately tests the global certificate under mismatch.  Every computed full radius satisfied the theorem.  Nevertheless, the correction $\alpha\delta/\rho$ dominated selection.  In all cases the minimizer was $(\rho,\alpha)=(100,10^{-6})$, at the allowed boundaries, and the full radius was numerically one.  Relative gaps to direct joint spectral optimization had median 2.904, mean 2.839, and maximum 4.505.  Thus Gate~2 failed.
 
 \begin{table}[h]
 \centering
-\caption{Placeholder: end-to-end registration results.}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lrrrrrrr}
+\caption{Controlled variable-coefficient result and predeclared gate.}
+\begin{tabular}{lrr}
 \toprule
-Method & Tune time & Solve time & Iterations & Dice & TRE & $\%\,J\le0$ & Peak memory\\
+Measure & Result & Criterion\\
 \midrule
-Default ADMM & -- & -- & -- & -- & -- & -- & --\\
-Residual balancing & -- & -- & -- & -- & -- & -- & --\\
-Adaptive spectral ADMM & -- & -- & -- & -- & -- & -- & --\\
-Song et al. search & -- & -- & -- & -- & -- & -- & --\\
-Proposed ADMM & -- & -- & -- & -- & -- & -- & --\\
-Proposed oADMM & -- & -- & -- & -- & -- & -- & --\\
+Certificate violations & 0/18 & 0\\
+Median relative radius gap & 2.904 & $<0.10$\\
+Gate 2 & failed & pass\\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 
-\subsection{Experiment 5: ablations}
-Ablate patch size, patch overlap, representative-gradient estimator, $\delta_G$ bound, zeroth-order regularization, finite-candidate components, and the perturbation correction. The most important ablation compares selection from $U_{\mathrm{LFA}}$ alone against selection from the certified $\mathcal U$.
-
-\subsection{Statistical protocol}
-Use identical image pairs and stopping tolerances for all methods. Report paired bootstrap confidence intervals for runtime and iteration differences. Predefine failure criteria, including nonconvergence, excessive folding, and violation of the same objective tolerance. Release all parameter logs and spectral diagnostics.
+\subsection{Decision-gate consequence}
+The protocol required stopping before expensive registration if the controlled median gap exceeded 0.10.  Accordingly, no public medical dataset was downloaded and no Dice, landmark, Jacobian, GPU-memory, or end-to-end runtime value is reported.  This is a scientific limitation, but it prevents a loose certificate from being presented as a useful tuner.  The implementation still includes residual/objective stopping rules, finite differences, Hessian construction, transform solves, and deformation-Jacobian tests for future work.
 
 \section{Discussion}
 \subsection{What is guaranteed}
-The method provides a rigorous upper bound for the full variable-coefficient ADMM/oADMM iteration relative to an explicitly constructed local surrogate. The standard-ADMM penalty exactly minimizes this certified envelope over the prescribed interval through finite candidate evaluation. The relaxation parameter exactly minimizes the certified conditional envelope at the selected penalty.
+The analysis provides a rigorous upper bound for the full variable-coefficient ADMM/oADMM iteration relative to an explicitly constructed normal local surrogate. The standard-ADMM penalty exactly minimizes this certified envelope over the prescribed interval through finite candidate evaluation. The relaxation parameter exactly minimizes the certified conditional envelope at the selected penalty.  These mathematical statements do not imply that the minimizer is a useful contraction.
 
 \subsection{What is not claimed}
 The selected parameters are not claimed to minimize the exact full spectral radius. The guarantee is minimization of a computable upper envelope. Tightness depends on the surrogate errors $\delta_H$ and $\delta_G$. The paper also does not claim that ADMM dominates multigrid, Newton--Krylov, or every learned registration method; comparisons concern a particular split registration solver and total runtime under matched accuracy constraints.
 
-\subsection{Why the direction can be novel}
-Prior quadratic ADMM work either derives formulas under broader but different structural assumptions or numerically optimizes the full spectrum. The proposed contribution is the combination of a registration-specific patch symbol, exact corner reduction, a noncommuting perturbation guarantee, and an algebraic finite-candidate optimizer. This makes the theory directly reflect the rank-one optical-flow Hessian and scalar Sobolev symbol.
+\subsection{Novelty after comparison with Song et al.}
+Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula, whereas our derivation uses the rank-one registration Hessian, a scalar Sobolev symbol, and a finite algebraic envelope with a noncommuting certificate.  That distinction survives at the level of analysis.  The practical claim does not: the certified selector is markedly worse than direct spectral optimization in our controlled cases.  The present contribution is therefore a limitation result and reproducible warning, not a competitive replacement for Song et al.
 
 \subsection{Limitations}
 The certified envelope may be loose when image gradients vary sharply or when patch decoupling produces a large $\delta_G$. Patch selection itself introduces design choices. The theory concerns each convex linearized subproblem; global convergence of the outer nonlinear diffeomorphic registration scheme requires separate assumptions. Higher-order, anisotropic, incompressible, or spatially varying regularizers require matrix-valued symbols, although the same surrogate-and-perturbation framework remains applicable.
@@ -566,8 +534,11 @@ The certified envelope may be loose when image gradients vary sharply or when pa
 \subsection{Extensions}
 Promising extensions include overlapping Schwarz-type local symbols, adaptive patch refinement driven by the certificate, multi-penalty ADMM with separate data and regularization metrics, and online reuse of local curvature summaries across pyramid levels. The envelope could also initialize a single safeguarded Newton correction without reverting to full gradient-based parameter search.
 
+\section{Data and Code Availability}
+The accompanying repository contains source code, tests, the fixed YAML configuration, environment specifications, raw JSON/CSV outputs, the research log, and exact reproduction commands.  No external patient data were used: the decision gate failed on generated fields, so downloading or processing a medical benchmark was neither necessary nor scientifically justified.  All synthetic fields are regenerated from the recorded seed.
+
 \section{Conclusion}
-We proposed a focused route to search-free ADMM and oADMM tuning for diffeomorphic image registration. The method exploits the rank-one local data Hessian and Fourier symbol of common velocity regularizers. Frozen-patch analysis yields exact modal factors and a finite curvature-corner envelope. A resolvent perturbation theorem converts this local analysis into a rigorous upper bound for the full noncommuting iteration. The resulting certified envelope can be minimized through finite algebraic candidate evaluation, eliminating iterative parameter tuning. The remaining task is empirical: determine whether the bound is sufficiently tight to match full spectral optimization and reduce total registration runtime on realistic two- and three-dimensional problems.
+Local spectral analysis gives correct algebra, exact constant-coefficient factors, and a valid noncommuting perturbation certificate.  It does not, with the global operator-norm mismatch used here, give a useful joint ADMM/oADMM tuner: the correction rewards vanishing relaxation and large penalty, so the certified minimizer stagnates.  The predeclared usefulness gate failed, and claims about real registration speed or quality are therefore unsupported.  Progress requires a substantially sharper structured or a posteriori bound---for example, interface-local estimates or weighted resolvent norms---before costly medical-registration evaluation is justified.
 
 \appendix
 \section{Proof of the Reduced Cayley Representation}\label{app:reduced}
