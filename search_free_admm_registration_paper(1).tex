@@ -1,0 +1,740 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs,array,multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage{cleveref}
+
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Search-Free ADMM for Diffeomorphic Registration}
+\rhead{Draft manuscript}
+\cfoot{\thepage}
+\setlength{\headheight}{14pt}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\I}{\mathbf{I}}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\spec}{\operatorname{spec}}
+\newcommand{\spr}{\varrho}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
+\newcommand{\argmax}{\operatorname*{arg\,max}}
+\newcommand{\clip}{\operatorname{clip}}
+\newcommand{\cay}[2]{\mathcal{C}_{#1}(#2)}
+
+\title{\textbf{Search-Free ADMM Parameter Selection for Diffeomorphic Image Registration via Local Spectral Envelopes}}
+\author{Anonymous Authors}
+\date{Research manuscript draft -- experiments pending}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The alternating direction method of multipliers (ADMM) is an effective solver for the convex optical-flow subproblems that arise inside iterative diffeomorphic image-registration algorithms, but its speed is highly sensitive to the penalty and over-relaxation parameters. Existing spectral approaches optimize these parameters numerically from the full iteration matrix, which can impose substantial preprocessing cost and must be repeated as image gradients, pyramid levels, and regularization strengths change. We develop a registration-specific, search-free alternative based on local spectral envelopes. The data Hessian is a spatially varying rank-one multiplication operator, whereas common Sobolev regularizers are locally translation invariant and possess explicit Fourier symbols. We freeze the data Hessian on image patches, diagonalize the resulting local ADMM and over-relaxed ADMM (oADMM) iterations exactly in a joint spatial-frequency and image-gradient basis, and reduce each local worst-case factor to finitely many curvature corners. We then prove a perturbation theorem showing that the spectral radius of the full variable-coefficient iteration is bounded by the frozen-patch envelope plus an explicit term proportional to the operator mismatch divided by the ADMM penalty. This yields a certified scalar upper envelope. Its minimizer is obtained without iterative hyperparameter search: for ADMM it lies among patch-envelope intersections, interval boundaries, and roots of explicit quartic equations; for oADMM the optimal relaxation at the selected penalty lies in a finite analytic candidate set. The method therefore replaces gradient-based parameter tuning by one pass of local curvature extraction and finite algebraic candidate evaluation. We specify experiments for synthetic variable-coefficient systems, two- and three-dimensional medical registration benchmarks, and ablations against exact spectral search, residual balancing, and adaptive spectral ADMM. The proposed theory is specialized to registration and does not assume that the full data and regularization Hessians commute.
+\end{abstract}
+
+\section{Introduction}
+Diffeomorphic image registration estimates an invertible, topology-preserving spatial transformation that aligns a moving image with a fixed image. Classical methods remain attractive because they provide explicit control over the deformation model, regularization, and numerical stopping criteria, and because they can be applied without training data. Representative approaches include DARTEL, diffeomorphic demons, large-deformation optimal-control formulations, and modern GPU-accelerated variational solvers \cite{Ashburner2007,Vercauteren2009,MangBiros2015,Thorley2021}. Their main practical limitation is computational cost.
+
+Many diffeomorphic schemes update a velocity field through a sequence of convex, linearized optical-flow problems. A typical quadratic subproblem is
+\begin{equation}
+\min_{v=(v_x,v_y)}
+\frac{\mu}{2}\norm{I_x\odot v_x+I_y\odot v_y+I_t}_2^2
++\frac{1}{2}\norm{Lv}_2^2,
+\label{eq:registration}
+\end{equation}
+where $I_x,I_y$ are spatial image derivatives, $I_t$ is the current temporal or residual derivative, and $L$ is a differential regularization operator. Splitting the data and regularization terms produces inexpensive pixelwise and Fourier-domain subproblems, making ADMM particularly suitable for GPU implementation \cite{Thorley2021,Song2024}.
+
+The penalty $\rho$ and relaxation $\alpha$ strongly affect convergence. Fixed defaults, residual balancing, and adaptive spectral rules can be effective, but they do not exploit the unusually specific geometry of registration: the data Hessian is block diagonal with rank-one $2\times2$ blocks, while the regularizer is a scalar elliptic operator applied identically to each velocity component. General quadratic ADMM theory derives optimal parameters for special classes \cite{Ghadimi2015,Teixeira2016,GiselssonBoyd2017}; more recently, Song et al. optimized $\rho$ numerically for general linear quadratic problems and derived an optimal $\alpha$ conditional on $\rho$, including experiments on diffeomorphic registration \cite{Song2024}. Their registration penalty still requires spectral optimization.
+
+This work asks a narrower question:
+\begin{quote}
+Can the registration structure be used to replace iterative spectral optimization by a finite, analytically generated parameter set while retaining a rigorous upper bound for the full variable-coefficient iteration?
+\end{quote}
+
+Our answer is based on local Fourier analysis (LFA), a classical tool for predicting and optimizing stationary iterations for constant-coefficient differential operators \cite{ChanElman1989,WienandsJoppich2005}. Standard LFA is exact for translation-invariant periodic problems, while nonstandard variants can remain predictive for jumping and random coefficients \cite{Kumar2019,Rodrigo2017}. Here, the coefficients that vary are the image-gradient blocks in the data Hessian. We freeze those blocks over patches, derive the exact patchwise ADMM symbol, and then control the discrepancy to the full iteration by a resolvent perturbation argument.
+
+\paragraph{Contributions.}
+\begin{enumerate}[leftmargin=2em]
+\item We derive an exact reduced Cayley-product representation for ADMM and oADMM applied to the split registration quadratic.
+\item We introduce a frozen-patch local spectral model in which the ADMM spectrum is explicit. The worst local factor is attained at finitely many data-curvature and regularizer-frequency corners.
+\item We prove a noncommuting perturbation bound
+\[
+\spr(T_{\rho,\alpha})
+\le U_{\mathrm{LFA}}(\rho,\alpha)
++\frac{\alpha}{\rho}(\delta_H+\delta_G),
+\]
+where $U_{\mathrm{LFA}}$ is the exact frozen-patch envelope and $\delta_H,\delta_G$ quantify the data and regularizer surrogate errors.
+\item We give a finite-candidate, search-free selector. For standard ADMM, the global minimizer of the certified envelope on a prescribed interval is found from explicit corner intersections and quartic stationary equations. Conditional on the selected $\rho$, the certified oADMM relaxation is selected from a finite closed-form set.
+\item We provide a reproducible experimental program designed to test envelope tightness, parameter optimality, and total runtime on synthetic systems and public two- and three-dimensional registration benchmarks.
+\end{enumerate}
+
+The manuscript deliberately leaves experimental values blank. No empirical result is asserted before computation.
+
+\section{Related Work}
+\subsection{ADMM parameter selection}
+The scaled ADMM iteration and practical residual stopping criteria were systematized by Boyd et al. \cite{Boyd2011}. Ghadimi et al. derived optimal penalties and relaxation parameters for several quadratic classes \cite{Ghadimi2015}. Teixeira et al. studied scaling, preconditioning, and optimal ADMM parameters in distributed quadratic programming \cite{Teixeira2016}. Giselsson and Boyd developed tight contraction bounds and metric selection for Douglas--Rachford splitting and ADMM under strong-convexity and smoothness assumptions \cite{GiselssonBoyd2017}. Adaptive alternatives include residual balancing and Barzilai--Borwein-type spectral updates \cite{Wohlberg2017,Xu2017}.
+
+Song et al. \cite{Song2024} is the closest work. It formulates ADMM/oADMM for general linear quadratic problems, optimizes the penalty from the iteration spectrum, and gives a closed-form relaxation parameter for fixed penalty. It includes diffeomorphic image registration as an application. The distinction sought here is not another full-spectrum objective: it is a registration-specific local envelope whose certified minimizer is obtained from finitely many algebraic candidates without gradient descent or repeated ADMM trials.
+
+\subsection{ADMM and variational diffeomorphic registration}
+DARTEL \cite{Ashburner2007} and diffeomorphic demons \cite{Vercauteren2009} are influential optimization-based registration methods. Thorley et al. proposed a fast diffeomorphic method that composes nonstationary velocity updates and solves arbitrary-order regularized convex subproblems with accelerated ADMM on GPUs \cite{Thorley2021}. Song et al. later used a closely related quadratic registration model to evaluate spectrally optimized ADMM and oADMM \cite{Song2024}.
+
+\subsection{Local Fourier analysis}
+Fourier analysis has long been used to estimate convergence factors of stationary iterations for elliptic problems \cite{ChanElman1989}. LFA became a principal tool for multigrid design and parameter optimization \cite{WienandsJoppich2005}. Its exactness under periodic translation-invariant assumptions and extensions to broader settings have been studied theoretically \cite{Rodrigo2017}. Nonstandard LFA can accurately predict multigrid behavior for random and discontinuous coefficients \cite{Kumar2019}. Our use differs in two ways: the iteration is an ADMM splitting map rather than a smoother, and the variable coefficient is a matrix-valued, rank-one optical-flow Hessian.
+
+\section{Registration Model and ADMM Splitting}
+\subsection{Discrete quadratic model}
+Let the image domain contain $n$ grid points in dimension $d\in\{2,3\}$. Stack the $d$ velocity components into $v\in\R^{dn}$. At grid point $x_i$, let
+\[
+q_i=\nabla I(x_i)\in\R^d.
+\]
+The linearized data Hessian is the block-diagonal matrix
+\begin{equation}
+H=\mu\,\diag(q_1q_1^\top,\ldots,q_nq_n^\top)\succeq0.
+\label{eq:H}
+\end{equation}
+Each block has eigenvalues $0$ and $\mu\norm{q_i}^2$ in two dimensions, or one nonzero and $d-1$ zero eigenvalues in $d$ dimensions.
+
+We assume a componentwise Sobolev regularizer
+\begin{equation}
+G=L^\top L = G_0\otimes I_d,
+\label{eq:G}
+\end{equation}
+where $G_0$ is a symmetric positive semidefinite finite-difference or spectral discretization. A small zeroth-order term $\gamma I$ or boundary condition may be included to remove the common nullspace. For a first-order periodic regularizer,
+\begin{equation}
+g(\xi)=\gamma+\frac{4\beta}{h^2}\sum_{\ell=1}^{d}\sin^2\left(\frac{\xi_\ell}{2}\right)
+\label{eq:regularizer_symbol}
+\end{equation}
+ is the Fourier symbol.
+
+The registration subproblem is
+\begin{equation}
+\min_v\;\frac12 v^\top Hv+b^\top v+\frac12v^\top Gv.
+\label{eq:quadratic}
+\end{equation}
+Introduce $w=v$:
+\begin{equation}
+\min_{v,w}\;f(v)+g(w)
+:=\frac12v^\top Hv+b^\top v+\frac12w^\top Gw,
+\qquad v-w=0.
+\label{eq:split}
+\end{equation}
+
+\subsection{ADMM and over-relaxation}
+With scaled dual $u$, standard ADMM is
+\begin{align}
+(H+\rho I)v^{k+1}&=-b+\rho(w^k-u^k),\label{eq:vupdate}\\
+(G+\rho I)w^{k+1}&=\rho(v^{k+1}+u^k),\label{eq:wupdate}\\
+u^{k+1}&=u^k+v^{k+1}-w^{k+1}.\label{eq:uupdate}
+\end{align}
+For oADMM, replace $v^{k+1}$ in the $w$ and dual updates by
+\[
+\widehat v^{k+1}=\alpha v^{k+1}+(1-\alpha)w^k,
+\qquad 0<\alpha\le2.
+\]
+The linear term $b$ shifts the fixed point but does not affect error propagation.
+
+\section{Exact Reduced Iteration}
+Define the resolvents and Cayley transforms
+\begin{align}
+P_H(\rho)&=\rho(H+\rho I)^{-1},&
+C_H(\rho)&=(H-\rho I)(H+\rho I)^{-1}=I-2P_H(\rho),\\
+P_G(\rho)&=\rho(G+\rho I)^{-1},&
+C_G(\rho)&=(G-\rho I)(G+\rho I)^{-1}=I-2P_G(\rho).
+\end{align}
+
+\begin{proposition}[Reduced Cayley iteration]\label{prop:reduced}
+For the quadratic splitting \eqref{eq:split}, all nonzero eigenvalues of the standard ADMM error matrix coincide with the eigenvalues of
+\begin{equation}
+E_{\rho,1}=\frac12\left(I+C_H(\rho)C_G(\rho)\right).
+\label{eq:Estandard}
+\end{equation}
+For oADMM, the corresponding reduced operator is
+\begin{equation}
+E_{\rho,\alpha}
+=\left(1-\frac{\alpha}{2}\right)I
++\frac{\alpha}{2}C_H(\rho)C_G(\rho).
+\label{eq:Ealpha}
+\end{equation}
+Consequently,
+\[
+\spr(T_{\rho,\alpha})=\spr(E_{\rho,\alpha}).
+\]
+\end{proposition}
+
+The proof is given in Appendix~\ref{app:reduced}. The product $C_HC_G$ is generally nonnormal because $H$ and $G$ do not commute. This is precisely why a global simultaneous diagonalization is unavailable for registration.
+
+\section{Frozen-Patch Local Spectral Envelope}
+\subsection{Patch surrogate}
+Partition the image grid into patches $\{\Omega_r\}_{r=1}^{R}$. On patch $r$, choose a representative image-gradient Hessian
+\begin{equation}
+H_r=\mu\bar q_r\bar q_r^\top+\nu I_d,
+\label{eq:Hr}
+\end{equation}
+where $\bar q_r$ may be a center, mean, or robust medoid gradient and $\nu\ge0$ is an optional model damping already present in the registration objective. Let its eigenvalues be
+\[
+h_{r,1}\le\cdots\le h_{r,d}.
+\]
+For the rank-one model, $h_{r,1}=\cdots=h_{r,d-1}=\nu$ and $h_{r,d}=\nu+\mu\norm{\bar q_r}^2$.
+
+Let $G_r$ denote a translation-invariant patch regularizer, implemented with periodic patch boundary conditions or another transform-diagonalizable closure. Its symbol lies in
+\[
+g_r(\xi)\in[g_r^-,g_r^+].
+\]
+Construct the block-direct-sum surrogate
+\[
+\widetilde H=\bigoplus_r(I_{|\Omega_r|}\otimes H_r),
+\qquad
+\widetilde G=\bigoplus_r(G_r\otimes I_d).
+\]
+
+\subsection{Exact patch symbol}
+Because $H_r$ acts only on velocity components and $G_r$ has scalar spatial symbol, the two commute on a patch.
+
+\begin{theorem}[Frozen-patch spectrum]\label{thm:frozen}
+The reduced oADMM surrogate $\widetilde E_{\rho,\alpha}$ is normal. Its eigenvalues are
+\begin{equation}
+e_{r,j}(\xi;\rho,\alpha)
+=1-\frac{\alpha}{2}
++\frac{\alpha}{2}
+\frac{h_{r,j}-\rho}{h_{r,j}+\rho}
+\frac{g_r(\xi)-\rho}{g_r(\xi)+\rho}.
+\label{eq:local_eig}
+\end{equation}
+Equivalently, with
+\begin{equation}
+\theta(h,g;\rho)=\frac{\rho^2+hg}{(\rho+h)(\rho+g)},
+\label{eq:theta}
+\end{equation}
+we have
+\[
+e_{r,j}(\xi;\rho,\alpha)
+=1-\alpha+\alpha\theta(h_{r,j},g_r(\xi);\rho).
+\]
+Therefore the exact frozen-patch envelope is
+\begin{equation}
+U_{\mathrm{LFA}}(\rho,\alpha)
+=\max_{r,j,\xi}|e_{r,j}(\xi;\rho,\alpha)|.
+\label{eq:ULFA}
+\end{equation}
+\end{theorem}
+
+\subsection{Corner reduction}
+The continuous frequency maximization is unnecessary.
+
+\begin{lemma}[Corner principle]\label{lem:corners}
+For fixed $\rho>0$,
+\begin{align}
+\frac{\partial\theta}{\partial h}
+&=\frac{\rho(g-\rho)}{(g+\rho)(h+\rho)^2},\\
+\frac{\partial\theta}{\partial g}
+&=\frac{\rho(h-\rho)}{(h+\rho)(g+\rho)^2}.
+\end{align}
+Hence $\theta$ is coordinatewise monotone on every rectangle
+$[h^-,h^+]\times[g^-,g^+]$, and its minimum and maximum occur at the four corners. Since $|1-\alpha+\alpha\theta|$ is convex as a function of $\theta$, its maximum also occurs at a corner.
+\end{lemma}
+
+Let
+\begin{equation}
+\mathcal C=\bigcup_{r,j}
+\{(h_{r,j},g_r^-),(h_{r,j},g_r^+)\}.
+\label{eq:cornerset}
+\end{equation}
+Then
+\begin{equation}
+U_{\mathrm{LFA}}(\rho,\alpha)
+=\max_{(h,g)\in\mathcal C}
+|1-\alpha+\alpha\theta(h,g;\rho)|.
+\label{eq:finite_envelope}
+\end{equation}
+Thus the full local Fourier calculation reduces to a small finite set even in three dimensions.
+
+\section{Rigorous Variable-Coefficient Bound}
+The frozen model is useful only if it controls the full noncommuting iteration. Define
+\begin{equation}
+\delta_H=\norm{H-\widetilde H}_2,
+\qquad
+\delta_G=\norm{G-\widetilde G}_2,
+\qquad
+\delta=\delta_H+\delta_G.
+\label{eq:deltas}
+\end{equation}
+For block-diagonal $H$, $\delta_H$ is the maximum patchwise $2$-norm of a $d\times d$ block difference and is therefore inexpensive. The regularizer error $\delta_G$ can be computed by a few power iterations or bounded by a row-sum/Gershgorin estimate of the patch-boundary stencil discrepancy.
+
+\begin{lemma}[Cayley Lipschitz bound]\label{lem:cayley_lipschitz}
+For symmetric positive semidefinite $A,B$ and $\rho>0$,
+\begin{equation}
+\norm{C_A(\rho)-C_B(\rho)}_2
+\le\frac{2}{\rho}\norm{A-B}_2.
+\label{eq:cayley_lipschitz}
+\end{equation}
+\end{lemma}
+
+\begin{theorem}[Certified local spectral envelope]\label{thm:certified}
+Let $T_{\rho,\alpha}$ be the full oADMM error iteration and let $U_{\mathrm{LFA}}$ be defined by \eqref{eq:finite_envelope}. Then, for $0<\alpha\le2$,
+\begin{equation}
+\boxed{
+\spr(T_{\rho,\alpha})
+\le
+\mathcal U(\rho,\alpha)
+:=U_{\mathrm{LFA}}(\rho,\alpha)
++\frac{\alpha\delta}{\rho}.
+}
+\label{eq:certified_envelope}
+\end{equation}
+The result requires no commutativity assumption on the full matrices $H$ and $G$.
+\end{theorem}
+
+The proof is in Appendix~\ref{app:perturbation}. The bound separates two effects:
+\begin{itemize}[leftmargin=2em]
+\item $U_{\mathrm{LFA}}$ measures the exact contraction of the frozen local models;
+\item $\alpha\delta/\rho$ penalizes spatial coefficient variation and patch-boundary approximation.
+\end{itemize}
+Larger $\rho$ suppresses the perturbation term, while excessively large $\rho$ worsens the local Cayley balance. This tradeoff creates a nontrivial, certifiable parameter-selection problem.
+
+\begin{corollary}[Guaranteed convergence]\label{cor:convergence}
+If the selected parameters satisfy $\mathcal U(\rho,\alpha)<1$, then the full linearized registration ADMM/oADMM iteration converges linearly with asymptotic factor at most $\mathcal U(\rho,\alpha)$.
+\end{corollary}
+
+\section{Search-Free Parameter Selection}
+We use ``search-free'' to mean that no grid search, gradient descent in $(\rho,\alpha)$, repeated ADMM trial, or repeated full iteration-matrix eigensolve is performed. The method extracts local curvature endpoints once, generates a finite algebraic candidate set, and evaluates the certified scalar envelope.
+
+\subsection{Standard ADMM penalty}
+For $\alpha=1$, all local modal factors are nonnegative, so
+\begin{equation}
+\mathcal U_{1}(\rho)
+=\max_{c\in\mathcal C}\theta_c(\rho)+\frac{\delta}{\rho},
+\qquad
+\theta_c(\rho):=\theta(h_c,g_c;\rho).
+\label{eq:standard_cert}
+\end{equation}
+Select a physically meaningful compact interval $\mathcal I=[\rho_-,\rho_+]$. For example,
+\[
+\rho_- = \epsilon_{\mathrm{num}},
+\qquad
+\rho_+=\max_{c\in\mathcal C}\max(h_c,g_c)+\delta,
+\]
+with a small positive numerical floor.
+
+Two corner branches intersect at explicitly computable points. Clearing denominators in
+$\theta(h_1,g_1;\rho)=\theta(h_2,g_2;\rho)$ gives
+\begin{equation}
+\rho\left(A_{12}\rho^2+B_{12}\right)=0,
+\label{eq:intersection}
+\end{equation}
+where
+\begin{align}
+A_{12}&=(h_2+g_2)-(h_1+g_1),\\
+B_{12}&=g_1g_2(h_1-h_2)+h_1h_2(g_1-g_2).
+\end{align}
+Thus a positive intersection is
+\[
+\rho_{12}=\sqrt{-B_{12}/A_{12}}
+\]
+whenever the radicand is positive.
+
+On an interval where corner $c=(h,g)$ is active, stationary points of the corrected branch solve
+\begin{equation}
+(h+g)\rho^2(\rho^2-hg)
+-\delta(\rho+h)^2(\rho+g)^2=0,
+\label{eq:quartic}
+\end{equation}
+which is a quartic polynomial in $\rho$.
+
+\begin{theorem}[Finite-candidate ADMM selector]\label{thm:finite_candidate}
+Let $\mathcal S_\rho$ contain:
+\begin{enumerate}[leftmargin=2em]
+\item the interval endpoints $\rho_-,\rho_+$;
+\item all positive pairwise intersection roots \eqref{eq:intersection} in $\mathcal I$;
+\item all positive roots of \eqref{eq:quartic} in $\mathcal I$ that lie on an interval where the associated corner is active.
+\end{enumerate}
+Then every global minimizer of $\mathcal U_1$ on $\mathcal I$ belongs to $\mathcal S_\rho$. Consequently,
+\begin{equation}
+\rho_{\mathrm{SF}}
+=\argmin_{\rho\in\mathcal S_\rho}\mathcal U_1(\rho)
+\label{eq:rho_sf}
+\end{equation}
+exactly minimizes the certified standard-ADMM envelope without iterative parameter search.
+\end{theorem}
+
+The proof follows from the piecewise-rational structure of the upper envelope and is given in Appendix~\ref{app:candidates}.
+
+\subsection{Conditional search-free relaxation}
+After selecting $\rho_{\mathrm{SF}}$, define
+\begin{align}
+a&=\min_{c\in\mathcal C}\theta_c(\rho_{\mathrm{SF}}),\\
+b&=\max_{c\in\mathcal C}\theta_c(\rho_{\mathrm{SF}}),
+\end{align}
+with $0\le a\le b<1$ for a well-posed local model. The certified oADMM envelope conditional on $\rho_{\mathrm{SF}}$ is
+\begin{equation}
+F(\alpha)
+=\max\{|1-\alpha+\alpha a|,|1-\alpha+\alpha b|\}
++\frac{\alpha\delta}{\rho_{\mathrm{SF}}}.
+\label{eq:alpha_obj}
+\end{equation}
+This is convex and piecewise linear in $\alpha$.
+
+\begin{theorem}[Finite-candidate oADMM relaxation]\label{thm:alpha_candidates}
+Let the admissible interval be $[\alpha_-,\alpha_+]\subset(0,2]$. A minimizer of \eqref{eq:alpha_obj} belongs to
+\begin{equation}
+\mathcal S_\alpha=
+\left\{
+\alpha_-,\alpha_+,
+\frac{1}{1-a},
+\frac{1}{1-b},
+\frac{2}{2-a-b}
+\right\}
+\cap[\alpha_-,\alpha_+].
+\label{eq:alpha_set}
+\end{equation}
+Therefore
+\begin{equation}
+\alpha_{\mathrm{SF}}
+=\argmin_{\alpha\in\mathcal S_\alpha}F(\alpha)
+\label{eq:alpha_sf}
+\end{equation}
+conditionally minimizes the certified oADMM envelope at $\rho_{\mathrm{SF}}$.
+\end{theorem}
+
+When $\delta=0$ and the unconstrained equioscillation point lies in $(0,2]$, the familiar formula
+\[
+\alpha_0=\frac{2}{2-a-b}
+\]
+is recovered. The perturbation term may instead favor a smaller relaxation.
+
+\subsection{Algorithm summary}
+\begin{center}
+\fbox{\begin{minipage}{0.92\linewidth}
+\textbf{Algorithm 1: Search-Free Local Spectral Envelope Tuning}
+\begin{enumerate}[leftmargin=1.8em]
+\item Compute image gradients and the exact block data Hessian $H$.
+\item Partition the grid; construct $H_r$ and transform-diagonalizable $G_r$.
+\item Extract $h_{r,j}$ and regularizer endpoints $g_r^-,g_r^+$; form $\mathcal C$.
+\item Compute or bound $\delta_H$ and $\delta_G$.
+\item Generate $\mathcal S_\rho$ from interval endpoints, corner intersections, and active quartic roots.
+\item Evaluate $\mathcal U_1$ and select $\rho_{\mathrm{SF}}$.
+\item Form $\mathcal S_\alpha$ and select $\alpha_{\mathrm{SF}}$ by evaluating \eqref{eq:alpha_obj}.
+\item Run oADMM once with the selected parameters. Optionally report $\mathcal U(\rho_{\mathrm{SF}},\alpha_{\mathrm{SF}})$ as a certificate.
+\end{enumerate}
+\end{minipage}}
+\end{center}
+
+\section{Implementation Details}
+\subsection{Patch construction}
+Candidate patch strategies include fixed cubic patches, multiresolution patches matched to the registration pyramid, and adaptive patches split where gradient magnitude or orientation varies beyond a threshold. A robust representative $\bar q_r$ can be obtained from the spatial median of gradients. Because $H$ is block diagonal,
+\[
+\delta_H
+=\max_i\norm{\mu q_iq_i^\top-H_{r(i)}}_2
+\]
+for the direct block surrogate.
+
+\subsection{Regularizer symbols}
+For periodic or cosine-transform boundary closures, $g_r^\pm$ are known analytically. For an order-$p$ Sobolev regularizer with symbol
+\[
+g(\xi)=\left(\gamma+\frac{4\beta}{h^2}\sum_{\ell=1}^d\sin^2(\xi_\ell/2)\right)^p,
+\]
+the endpoints are
+\[
+g^- = \gamma^p,
+\qquad
+g^+=\left(\gamma+\frac{4\beta d}{h^2}\right)^p.
+\]
+The patch-boundary discrepancy $\delta_G$ can be reduced using overlapping patches or cosine closures rather than disconnected periodic patches.
+
+\subsection{Computational complexity}
+For rank-one data blocks, each patch contributes only two distinct data eigenvalues in 2D or two groups in 3D. Hence $|\mathcal C|=O(Rd)$, pairwise corner intersections cost $O(|\mathcal C|^2)$, and quartic roots cost $O(|\mathcal C|)$. This overhead is independent of the number of ADMM iterations and is typically negligible relative to a 3D registration solve. No full $2n\times2n$ or $3n\times3n$ iteration matrix is formed.
+
+\section{Experiments and Results Placeholder}
+This section specifies the experiments required to complete the paper. Numerical entries are intentionally left blank.
+
+\subsection{Experiment 1: constant-coefficient verification}
+Generate periodic 2D and 3D systems with spatially constant $q$ and transform-diagonalizable $G$. In this setting $\delta=0$ and the LFA spectrum is exact.
+
+\paragraph{Questions.}
+\begin{enumerate}[leftmargin=2em]
+\item Does the implementation reproduce the analytical eigenvalues \eqref{eq:local_eig} to numerical precision?
+\item Does the finite-candidate selector match dense-grid minimization of the exact spectral radius?
+\item Does the conditional $\alpha$ rule match the exact minimizer?
+\end{enumerate}
+
+\begin{table}[h]
+\centering
+\caption{Placeholder: constant-coefficient verification.}
+\begin{tabular}{lcccc}
+\toprule
+Dimension & $|\rho_{\mathrm{SF}}-\rho_{\mathrm{opt}}|/\rho_{\mathrm{opt}}$ & Envelope gap & Iteration gap & Runtime overhead\\
+\midrule
+2D & -- & -- & -- & --\\
+3D & -- & -- & -- & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Experiment 2: controlled variable coefficients}
+Construct synthetic image-gradient fields with controllable magnitude variation, orientation rotation, and patch discontinuities. Compute the full iteration spectral radius on small grids.
+
+\paragraph{Independent variables.}
+Patch size; $\norm{\nabla H}_\infty$; orientation winding; regularization order; $\gamma$; grid spacing; and overlap.
+
+\paragraph{Primary outcomes.}
+\[
+\text{tightness}=
+\frac{\mathcal U(\rho_{\mathrm{SF}},\alpha_{\mathrm{SF}})}
+{\spr(T_{\rho_{\mathrm{SF}},\alpha_{\mathrm{SF}}})},
+\qquad
+\text{optimality gap}=
+\frac{\spr(T_{\mathrm{SF}})-\spr(T_{\mathrm{opt}})}{\spr(T_{\mathrm{opt}})}.
+\]
+
+\begin{figure}[h]
+\centering
+\fbox{\parbox[c][2in][c]{0.88\linewidth}{\centering Placeholder: true spectral radius, frozen LFA envelope, and certified envelope versus $\rho$ for increasing coefficient variation.}}
+\caption{Planned validation of the perturbation theorem and envelope tightness.}
+\end{figure}
+
+\subsection{Experiment 3: registration subproblems extracted from real data}
+Extract linearized subproblems from multiresolution registration runs on public benchmarks, such as Learn2Reg lung CT and brain MRI tasks \cite{Hering2022}, OASIS brain MRI, and an additional 3D cardiac or thoracic dataset where licensing permits. At selected pyramid levels, explicitly estimate the dominant eigenvalue of the iteration matrix with Arnoldi iterations for comparison only.
+
+\subsection{Experiment 4: end-to-end diffeomorphic registration}
+Embed the selector into a Thorley-style composed velocity-field method \cite{Thorley2021}. Compare:
+\begin{enumerate}[leftmargin=2em]
+\item default ADMM ($\rho=1,\alpha=1$);
+\item residual balancing;
+\item adaptive spectral ADMM \cite{Xu2017};
+\item Song et al. numerical spectral optimization \cite{Song2024};
+\item the proposed standard-ADMM selector;
+\item the proposed oADMM selector.
+\end{enumerate}
+
+Report total wall-clock time, parameter-selection time, ADMM iterations, linear-system solves, Dice, target-registration error where landmarks exist, Hausdorff distance, percentage of nonpositive Jacobian determinants, and memory usage.
+
+\begin{table}[h]
+\centering
+\caption{Placeholder: end-to-end registration results.}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+Method & Tune time & Solve time & Iterations & Dice & TRE & $\%\,J\le0$ & Peak memory\\
+\midrule
+Default ADMM & -- & -- & -- & -- & -- & -- & --\\
+Residual balancing & -- & -- & -- & -- & -- & -- & --\\
+Adaptive spectral ADMM & -- & -- & -- & -- & -- & -- & --\\
+Song et al. search & -- & -- & -- & -- & -- & -- & --\\
+Proposed ADMM & -- & -- & -- & -- & -- & -- & --\\
+Proposed oADMM & -- & -- & -- & -- & -- & -- & --\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{Experiment 5: ablations}
+Ablate patch size, patch overlap, representative-gradient estimator, $\delta_G$ bound, zeroth-order regularization, finite-candidate components, and the perturbation correction. The most important ablation compares selection from $U_{\mathrm{LFA}}$ alone against selection from the certified $\mathcal U$.
+
+\subsection{Statistical protocol}
+Use identical image pairs and stopping tolerances for all methods. Report paired bootstrap confidence intervals for runtime and iteration differences. Predefine failure criteria, including nonconvergence, excessive folding, and violation of the same objective tolerance. Release all parameter logs and spectral diagnostics.
+
+\section{Discussion}
+\subsection{What is guaranteed}
+The method provides a rigorous upper bound for the full variable-coefficient ADMM/oADMM iteration relative to an explicitly constructed local surrogate. The standard-ADMM penalty exactly minimizes this certified envelope over the prescribed interval through finite candidate evaluation. The relaxation parameter exactly minimizes the certified conditional envelope at the selected penalty.
+
+\subsection{What is not claimed}
+The selected parameters are not claimed to minimize the exact full spectral radius. The guarantee is minimization of a computable upper envelope. Tightness depends on the surrogate errors $\delta_H$ and $\delta_G$. The paper also does not claim that ADMM dominates multigrid, Newton--Krylov, or every learned registration method; comparisons concern a particular split registration solver and total runtime under matched accuracy constraints.
+
+\subsection{Why the direction can be novel}
+Prior quadratic ADMM work either derives formulas under broader but different structural assumptions or numerically optimizes the full spectrum. The proposed contribution is the combination of a registration-specific patch symbol, exact corner reduction, a noncommuting perturbation guarantee, and an algebraic finite-candidate optimizer. This makes the theory directly reflect the rank-one optical-flow Hessian and scalar Sobolev symbol.
+
+\subsection{Limitations}
+The certified envelope may be loose when image gradients vary sharply or when patch decoupling produces a large $\delta_G$. Patch selection itself introduces design choices. The theory concerns each convex linearized subproblem; global convergence of the outer nonlinear diffeomorphic registration scheme requires separate assumptions. Higher-order, anisotropic, incompressible, or spatially varying regularizers require matrix-valued symbols, although the same surrogate-and-perturbation framework remains applicable.
+
+\subsection{Extensions}
+Promising extensions include overlapping Schwarz-type local symbols, adaptive patch refinement driven by the certificate, multi-penalty ADMM with separate data and regularization metrics, and online reuse of local curvature summaries across pyramid levels. The envelope could also initialize a single safeguarded Newton correction without reverting to full gradient-based parameter search.
+
+\section{Conclusion}
+We proposed a focused route to search-free ADMM and oADMM tuning for diffeomorphic image registration. The method exploits the rank-one local data Hessian and Fourier symbol of common velocity regularizers. Frozen-patch analysis yields exact modal factors and a finite curvature-corner envelope. A resolvent perturbation theorem converts this local analysis into a rigorous upper bound for the full noncommuting iteration. The resulting certified envelope can be minimized through finite algebraic candidate evaluation, eliminating iterative parameter tuning. The remaining task is empirical: determine whether the bound is sufficiently tight to match full spectral optimization and reduce total registration runtime on realistic two- and three-dimensional problems.
+
+\appendix
+\section{Proof of the Reduced Cayley Representation}\label{app:reduced}
+For standard ADMM, the homogeneous updates are
+\[
+v^{k+1}=P_H(w^k-u^k),
+\qquad
+w^{k+1}=P_G(v^{k+1}+u^k).
+\]
+Eliminating $v^{k+1}$ gives the state iteration
+\[
+\begin{bmatrix}w^{k+1}\\u^{k+1}\end{bmatrix}
+=
+\underbrace{\begin{bmatrix}
+P_GP_H&P_G(I-P_H)\\
+(I-P_G)P_H&(I-P_G)(I-P_H)
+\end{bmatrix}}_{T_{\rho,1}}
+\begin{bmatrix}w^k\\u^k\end{bmatrix}.
+\]
+Factor
+\[
+T_{\rho,1}
+=
+\begin{bmatrix}P_G\\I-P_G\end{bmatrix}
+\begin{bmatrix}P_H&I-P_H\end{bmatrix}.
+\]
+The nonzero eigenvalues of $AB$ and $BA$ coincide. Hence the nonzero spectrum equals that of
+\[
+P_HP_G+(I-P_H)(I-P_G).
+\]
+Using $P_H=(I-C_H)/2$ and $P_G=(I-C_G)/2$ yields
+\[
+P_HP_G+(I-P_H)(I-P_G)=\frac12(I+C_HC_G).
+\]
+The relaxed formula follows by inserting $\widehat v^{k+1}=\alpha v^{k+1}+(1-\alpha)w^k$ and collecting the same reduced state, yielding
+\[
+E_{\rho,\alpha}=(1-\alpha)I+\alpha E_{\rho,1}
+=\left(1-\frac\alpha2\right)I+\frac\alpha2 C_HC_G.
+\]
+
+\section{Proof of the Perturbation Bound}\label{app:perturbation}
+For $C_A=I-2\rho(A+\rho I)^{-1}$,
+\begin{align*}
+C_A-C_B
+&=2\rho\left[(B+\rho I)^{-1}-(A+\rho I)^{-1}\right]\\
+&=2\rho(A+\rho I)^{-1}(A-B)(B+\rho I)^{-1}.
+\end{align*}
+Since $A,B\succeq0$,
+\[
+\norm{(A+\rho I)^{-1}}_2\le\rho^{-1},
+\]
+which proves Lemma~\ref{lem:cayley_lipschitz}. Next,
+\begin{align*}
+\norm{C_HC_G-C_{\widetilde H}C_{\widetilde G}}_2
+&\le
+\norm{(C_H-C_{\widetilde H})C_G}_2
++\norm{C_{\widetilde H}(C_G-C_{\widetilde G})}_2\\
+&\le\frac{2}{\rho}(\delta_H+\delta_G),
+\end{align*}
+using $\norm{C_A}_2\le1$ for $A\succeq0$. Therefore
+\begin{align*}
+\spr(E_{\rho,\alpha})
+&\le\norm{E_{\rho,\alpha}}_2\\
+&\le\norm{\widetilde E_{\rho,\alpha}}_2
++\frac{\alpha}{2}
+\norm{C_HC_G-C_{\widetilde H}C_{\widetilde G}}_2\\
+&\le U_{\mathrm{LFA}}(\rho,\alpha)
++\frac{\alpha}{\rho}(\delta_H+\delta_G).
+\end{align*}
+
+\section{Proof of the Finite-Candidate Selector}\label{app:candidates}
+Each corner branch $\theta_c$ is rational and smooth for $\rho>0$. The pointwise maximum can change active branch only where two branches intersect, which gives \eqref{eq:intersection}. Between consecutive intersections, one branch is active. On such an interval, differentiating
+\[
+\theta(h,g;\rho)+\delta/\rho
+\]
+gives
+\[
+\frac{(h+g)(\rho^2-hg)}{(\rho+h)^2(\rho+g)^2}-\frac{\delta}{\rho^2}.
+\]
+Clearing positive denominators yields \eqref{eq:quartic}. A global minimum of a continuous piecewise-smooth function on a compact interval occurs at an interval endpoint, a nonsmooth branch intersection, or a stationary point of an active smooth branch. This proves Theorem~\ref{thm:finite_candidate}.
+
+For Theorem~\ref{thm:alpha_candidates}, note that the image of $\theta\in[a,b]$ under $1-\alpha+\alpha\theta$ is an interval. The maximum absolute value occurs at its endpoints. The resulting maximum of two absolute affine functions plus a linear function is convex piecewise linear. Its slope changes only at the two zero crossings, the equioscillation intersection, and the admissible interval endpoints, proving \eqref{eq:alpha_set}.
+
+\begin{thebibliography}{99}
+\bibitem{Ashburner2007}
+J. Ashburner,
+``A fast diffeomorphic image registration algorithm,''
+\emph{NeuroImage}, vol. 38, no. 1, pp. 95--113, 2007.
+DOI: 10.1016/j.neuroimage.2007.07.007.
+
+\bibitem{Boyd2011}
+S. Boyd, N. Parikh, E. Chu, B. Peleato, and J. Eckstein,
+``Distributed optimization and statistical learning via the alternating direction method of multipliers,''
+\emph{Foundations and Trends in Machine Learning}, vol. 3, no. 1, pp. 1--122, 2011.
+
+\bibitem{ChanElman1989}
+T. F. Chan and H. C. Elman,
+``Fourier analysis of iterative methods for elliptic problems,''
+\emph{SIAM Review}, vol. 31, no. 1, pp. 20--49, 1989.
+DOI: 10.1137/1031002.
+
+\bibitem{Ghadimi2015}
+E. Ghadimi, A. Teixeira, I. Shames, and M. Johansson,
+``Optimal parameter selection for the alternating direction method of multipliers (ADMM): quadratic problems,''
+\emph{IEEE Transactions on Automatic Control}, vol. 60, no. 3, pp. 644--658, 2015.
+
+\bibitem{GiselssonBoyd2017}
+P. Giselsson and S. Boyd,
+``Linear convergence and metric selection for Douglas--Rachford splitting and ADMM,''
+\emph{IEEE Transactions on Automatic Control}, vol. 62, no. 2, pp. 532--544, 2017.
+
+\bibitem{Hering2022}
+A. Hering et al.,
+``Learn2Reg: comprehensive multi-task medical image registration challenge, dataset and evaluation in the era of deep learning,''
+\emph{IEEE Transactions on Medical Imaging}, vol. 42, no. 3, pp. 697--712, 2023; preprint 2021.
+
+\bibitem{Kumar2019}
+P. Kumar, C. Rodrigo, F. J. Gaspar, and C. W. Oosterlee,
+``On local Fourier analysis of multigrid methods for PDEs with jumping and random coefficients,''
+\emph{SIAM Journal on Scientific Computing}, vol. 41, no. 3, pp. A1385--A1413, 2019.
+DOI: 10.1137/18M1173769.
+
+\bibitem{MangBiros2015}
+A. Mang and G. Biros,
+``An inexact Newton--Krylov algorithm for constrained diffeomorphic image registration,''
+\emph{SIAM Journal on Imaging Sciences}, vol. 8, no. 2, pp. 1030--1069, 2015.
+
+\bibitem{Rodrigo2017}
+C. Rodrigo, F. J. Gaspar, and L. T. Zikatanov,
+``On the validity of the local Fourier analysis,''
+arXiv:1710.00408, 2017.
+
+\bibitem{Song2024}
+J. Song, W. Lu, Y. Tang, et al.,
+``Optimizing ADMM and over-relaxed ADMM parameters for linear quadratic problems,''
+\emph{Proceedings of the AAAI Conference on Artificial Intelligence}, vol. 38, no. 8, pp. 14972--14980, 2024.
+
+\bibitem{Teixeira2016}
+A. Teixeira, E. Ghadimi, I. Shames, H. Sandberg, and M. Johansson,
+``The ADMM algorithm for distributed quadratic problems: parameter selection and constraint preconditioning,''
+\emph{IEEE Transactions on Signal Processing}, vol. 64, no. 2, pp. 290--305, 2016.
+
+\bibitem{Thorley2021}
+A. Thorley et al.,
+``Nesterov accelerated ADMM for fast diffeomorphic image registration,''
+in \emph{Medical Image Computing and Computer Assisted Intervention -- MICCAI 2021}, LNCS 12904, pp. 150--160, 2021.
+
+\bibitem{Vercauteren2009}
+T. Vercauteren, X. Pennec, A. Perchant, and N. Ayache,
+``Diffeomorphic demons: efficient non-parametric image registration,''
+\emph{NeuroImage}, vol. 45, no. 1 Suppl., pp. S61--S72, 2009.
+DOI: 10.1016/j.neuroimage.2008.10.040.
+
+\bibitem{WienandsJoppich2005}
+R. Wienands and W. Joppich,
+\emph{Practical Fourier Analysis for Multigrid Methods}.
+Chapman \& Hall/CRC, 2005.
+
+\bibitem{Wohlberg2017}
+B. Wohlberg,
+``ADMM penalty parameter selection by residual balancing,''
+arXiv:1704.06209, 2017.
+
+\bibitem{Xu2017}
+Z. Xu, M. A. T. Figueiredo, and T. Goldstein,
+``Adaptive ADMM with spectral penalty parameter selection,''
+in \emph{Proceedings of AISTATS}, PMLR 54, pp. 718--727, 2017.
+\end{thebibliography}
+
+\end{document}
