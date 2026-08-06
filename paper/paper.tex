@@ -39,15 +39,15 @@
 \newcommand{\clip}{\operatorname{clip}}
 \newcommand{\cay}[2]{\mathcal{C}_{#1}(#2)}
 
-\title{\textbf{Local Spectral Envelopes for ADMM Registration: Exact Algebra, a Certificate, and a Negative Parameter-Selection Result}}
+\title{\textbf{Signed Local Spectral Envelopes for Search-Free ADMM Tuning in Diffeomorphic Image Registration}}
 \author{Anonymous Authors}
-\date{Reproducible negative-results report, August 2026}
+\date{Revised research report, August 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We investigate whether local Fourier envelopes can select ADMM penalty and relaxation parameters for quadratic subproblems in diffeomorphic registration without numerical hyperparameter search.  For the precise scaled over-relaxation convention, we prove that the nonzero state spectrum equals that of $(1-\alpha/2)I+(\alpha/2)C_HC_G$.  Frozen constant-coefficient patches therefore have the exact modal factor $1-\alpha+\alpha(\rho^2+hg)/((\rho+h)(\rho+g))$, whose worst value occurs at curvature corners.  A resolvent argument gives the noncommuting certificate $\spr(T)\le U_{\rm LFA}+\alpha(\delta_H+\delta_G)/\rho$, and standard-ADMM minimization reduces to finitely many algebraic roots.  Double-precision tests confirm the identities and certificate.  Constant periodic problems agree with the local envelope to at most $1.0\times10^{-15}$ in our three tested grids.  The central practical hypothesis, however, fails in a predeclared controlled experiment: for all 18 variable-coefficient cases the certified joint selector chooses the lower relaxation boundary ($\alpha=10^{-6}$) and upper penalty boundary ($\rho=100$), giving convergence factors essentially one; its median relative gap to direct joint spectral optimization is 2.904.  The certificate remains valid but is too conservative for tuning.  We therefore report a negative result and stop before real-data registration under the predeclared decision gate.  The algebra, code, configurations, raw results, and failure analysis are released as a reproducible basis for tighter structured perturbation bounds.
+We derive and test signed, registration-specific spectral enclosures for ADMM and over-relaxed ADMM (oADMM).  The exact reduced operator is $(1-\alpha/2)I+(\alpha/2)C_HC_G$.  For constant image gradients and a scalar transform-diagonalizable Sobolev regularizer, its modal factors reduce to curvature corners; the globally optimal joint $(\rho,\alpha)$ lies in a finite algebraic candidate set.  For spatially varying rank-one Hessian blocks, we retain the exact regularizer and derive block disks, a commutator rectangle, and a sharper comparison-matrix rectangle based on three scalar $n\times n$ eigenproblems rather than the full $dn\times dn$ iteration.  We then separate prediction from certification: exact pixelwise curvatures choose parameters algebraically, after which one comparison-matrix evaluation certifies the chosen iteration.  In ten separated synthetic regimes this predict-then-certify method produced a rigorous bound below one in every case, never collapsed, and retained median spectral-radius gaps to full optimization of 0.057 overall and 0.027 over nine smooth cases.  The certificates are conservative (median relative bound gap 1.29), but parameter quality and certified convergence hold simultaneously.  Constant-gradient results are exact to machine precision; 18 broader stress cases verify every enclosure without violation.  These results provide a positive search-free methodology while identifying certificate tightness, rather than parameter quality, as the remaining obstacle before real-data claims.
 \end{abstract}
 
 \section{Introduction}
@@ -330,8 +330,101 @@ Larger $\rho$ suppresses the perturbation term, while excessively large $\rho$ w
 If the selected parameters satisfy $\mathcal U(\rho,\alpha)<1$, then the full linearized registration ADMM/oADMM iteration converges linearly with asymptotic factor at most $\mathcal U(\rho,\alpha)$.
 \end{corollary}
 
+\section{Signed Enclosures with the Exact Regularizer}
+We now retain $G=G_0\otimes I_d$ exactly.  Write $C_G=K_\rho\otimes I_d$ and $C_H=\operatorname{diag}(C_1,\ldots,C_n)$, where each $C_i=(H_i-\rho I)(H_i+\rho I)^{-1}$ is an explicit symmetric $d\times d$ block.  Consequently
+\[
+(C_HC_G)_{ij}=(K_\rho)_{ij}C_i.
+\]
+
+\begin{theorem}[Block-Gershgorin enclosure]\label{thm:block_gershgorin}
+Every eigenvalue of $C_HC_G$ belongs to a disk
+\[
+ |z-(K_\rho)_{ii}c_{i,r}|\le
+ \norm{C_i}_2\sum_{j\ne i}|(K_\rho)_{ij}|,
+\]
+for some pixel $i$ and eigenvalue $c_{i,r}$ of $C_i$.  Hence the affine disk envelope $U_{\rm BG}$ stated in the introduction is a rigorous upper bound on $\spr(T_{\rho,\alpha})$.
+\end{theorem}
+The proof selects an eigenvector block of maximum Euclidean norm.  The diagonal block $(K_\rho)_{ii}C_i$ is normal, so its shifted smallest singular value is exactly the distance to its spectrum; the off-diagonal block row gives the stated radius.
+
+The same structure yields a signed rectangle.  With $A=C_HC_G$, let $S=(A+A^\top)/2$ and $Q=(A-A^\top)/2$.  Their off-diagonal blocks are
+\[
+ S_{ij}=(K_\rho)_{ij}(C_i+C_j)/2,\qquad
+ Q_{ij}=(K_\rho)_{ij}(C_i-C_j)/2.
+\]
+Define
+\begin{align*}
+m_\rho&=\min_i\left[\lambda_{\min}((K_\rho)_{ii}C_i)-\sum_{j\ne i}|(K_\rho)_{ij}|\norm{(C_i+C_j)/2}_2\right],\\
+M_\rho&=\max_i\left[\lambda_{\max}((K_\rho)_{ii}C_i)+\sum_{j\ne i}|(K_\rho)_{ij}|\norm{(C_i+C_j)/2}_2\right],\\
+\eta_\rho&=\max_i\sum_{j\ne i}|(K_\rho)_{ij}|\norm{(C_i-C_j)/2}_2.
+\end{align*}
+
+\begin{theorem}[Commutator-aware rectangle]\label{thm:rectangle}
+The spectrum satisfies $\spec(C_HC_G)\subset[m_\rho,M_\rho]+i[-\eta_\rho,\eta_\rho]$.  Therefore
+\[
+\spr(T_{\rho,\alpha})\le U_{\rm rect}:=
+\max_{x\in\{m_\rho,M_\rho\}}
+\sqrt{(1-\alpha/2+\alpha x/2)^2+(\alpha\eta_\rho/2)^2}.
+\]
+For fixed $\rho$, the minimizing $\alpha$ belongs to the endpoints, the stationary point of either displayed quadratic, or the intersection $4/(2-m_\rho-M_\rho)$ when admissible.
+\end{theorem}
+Indeed, real parts of eigenvalues lie in the Rayleigh interval of $S$ and imaginary parts are bounded by $\norm{Q}_2$.  Hermitian block-Gershgorin bounds $S$, while the symmetric matrix of block norms bounds $\norm{Q}_2$ by its maximum row sum.  Notably, $\eta_\rho=0$ for constant data blocks.
+
+The row maximum can be replaced by a strictly stronger global comparison construction.  Let $B^S_{ij}=|(K_\rho)_{ij}|\norm{(C_i+C_j)/2}_2$ and $B^Q_{ij}=|(K_\rho)_{ij}|\norm{(C_i-C_j)/2}_2$ off diagonal, with zero diagonal.  Let $d_i^-$ and $d_i^+$ be the extreme eigenvalues of $(K_\rho)_{ii}C_i$.
+
+\begin{theorem}[Perron comparison rectangle]\label{thm:comparison}
+The rectangle theorem remains valid with
+\[
+m_\rho=\lambda_{\min}(\operatorname{diag}(d^-)-B^S),\quad
+M_\rho=\lambda_{\max}(\operatorname{diag}(d^+)+B^S),\quad
+\eta_\rho=\spr(B^Q).
+\]
+These bounds are never weaker than their block-row-sum counterparts.  They require three symmetric scalar $n\times n$ eigenproblems and no $dn\times dn$ iteration matrix.
+\end{theorem}
+For a block vector $x$, set $y_i=\norm{x_i}_2$.  Bounding each Hermitian quadratic cross term by $B^S_{ij}y_iy_j$ gives the two scalar Rayleigh quotients.  The same block-norm comparison gives $\norm{Qx}_2\le\norm{B^Qy}_2$, hence $\norm Q_2\le\norm{B^Q}_2=\spr(B^Q)$.  Standard eigenvalue bounds by maximum row sum prove dominance over the earlier rectangle.
+
+This motivates a two-stage method.  First, enumerate all pixelwise rank-one curvatures and use the exact constant-model finite candidates to predict $(\rho_p,\alpha_p)$.  Second, evaluate the comparison rectangle once at that pair.
+
+\begin{corollary}[Predict-then-certify]\label{cor:predict_certify}
+The prediction stage uses no full spectral optimization.  If its comparison bound satisfies $U_{\rm cmp}(\rho_p,\alpha_p)<1$, then the full variable-coefficient oADMM iteration converges linearly, irrespective of whether the pixel-curvature predictor itself is an enclosure.
+\end{corollary}
+This separation is important: a conservative certificate can validate a good predictor without being allowed to move its minimizer toward a poor boundary solution.
+
+\begin{center}
+\fbox{\begin{minipage}{0.91\linewidth}
+\textbf{Algorithm 1: Search-Free Predict-then-Certify}
+\begin{enumerate}[leftmargin=1.8em]
+\item Compute the exact rank-one blocks $H_i$ and their distinct curvatures; combine them with the exact symbol endpoints of $G_0$.
+\item Enumerate the joint constant-model algebraic candidates and select $(\rho_p,\alpha_p)$ from the pixel-curvature predictor.
+\item At this single pair, compute $C_i$, $K_{\rho_p}$, $B^S$, $B^Q$, and the Perron comparison rectangle.
+\item Return $(\rho_p,\alpha_p,U_{\rm cmp})$ with status \texttt{CERTIFIED\_USEFUL} if $U_{\rm cmp}<1$ and no boundary collapse occurs; otherwise return \texttt{CERTIFIED\_CONSERVATIVE} or \texttt{UNCERTIFIABLE}.
+\end{enumerate}
+\end{minipage}}
+\end{center}
+
+Finally, the resolvent identity gives the explicit commutator estimate
+\[
+\norm{[C_H,C_G]}_2\le
+\frac{4\rho^2}{(\lambda_{\min}(H)+\rho)^2(\lambda_{\min}(G)+\rho)^2}
+\norm{[H,G]}_2,
+\]
+and $[H,G]_{ij}=G_{ij}(H_i-H_j)$.  This proves that nonnormality is controlled by local, rather than global, Hessian differences.
+
+For the rank-one model, a block rotation $R_i$ aligned with $q_i$ diagonalizes $H_i$ exactly.  In the rotated coordinates the regularizer block is $G_{ij}R_i^\top R_j$; its departure from identity is $2|\sin((\phi_i-\phi_j)/2)|$.  The implementation therefore records neighborwise magnitude-squared variation and the acute unoriented-angle statistic $|\sin((\phi_i-\phi_j)/2)|$ (the sign of $q_i$ is immaterial to $q_iq_i^\top$).  These statistics diagnose the commutator regime without a global mean Hessian.
+
 \section{Search-Free Parameter Selection}
 We use ``search-free'' to mean that no grid search, gradient descent in $(\rho,\alpha)$, repeated ADMM trial, or repeated full iteration-matrix eigensolve is performed. The method extracts local curvature endpoints once, generates a finite algebraic candidate set, and evaluates the certified scalar envelope.
+
+\subsection{Globally joint constant-gradient selector}
+For fixed $\rho$, let $a(\rho)=\min_c\theta_c(\rho)$ and $b(\rho)=\max_c\theta_c(\rho)$.  On $0<\alpha\le2$, exact minimization gives
+\[
+\alpha_*(\rho)=\min\left\{2,\frac{2}{2-a(\rho)-b(\rho)}\right\}.
+\]
+After eliminating $\alpha$, the objective is $(b-a)/(2-a-b)$ when $a+b\le1$, and $2b-1$ when $a+b\ge1$.
+
+\begin{theorem}[Exact search-free constant-gradient tuning]\label{thm:joint_constant}
+On a compact positive penalty interval, a globally optimal pair $(\rho,\alpha)$ is obtained by evaluating a finite algebraic set comprising interval endpoints, pairwise corner-branch intersections, roots of $a+b=1$, and stationary roots of the two rational objectives above for every ordered active-corner pair.  All equations become finite-degree polynomials after clearing positive denominators.
+\end{theorem}
+Between consecutive branch intersections, the active minimum and maximum are fixed rational functions.  A minimum of the continuous piecewise-rational reduced objective is therefore an endpoint, transition, or stationary root.  Enumerating all corner pairs is a finite superset and removes the need to determine activity symbolically.  The implementation verifies companion-matrix roots by polynomial residual and interval membership.
 
 \subsection{Standard ADMM penalty}
 For $\alpha=1$, all local modal factors are nonnegative, so
@@ -439,7 +532,7 @@ is recovered. The perturbation term may instead favor a smaller relaxation.
 \subsection{Algorithm summary}
 \begin{center}
 \fbox{\begin{minipage}{0.92\linewidth}
-\textbf{Algorithm 1: Search-Free Local Spectral Envelope Tuning}
+\textbf{Algorithm 2: Legacy Certified-Envelope Minimization Baseline}
 \begin{enumerate}[leftmargin=1.8em]
 \item Compute image gradients and the exact block data Hessian $H$.
 \item Partition the grid; construct $H_r$ and transform-diagonalizable $G_r$.
@@ -479,7 +572,7 @@ The patch-boundary discrepancy $\delta_G$ can be reduced using overlapping patch
 For rank-one data blocks, each patch contributes only two distinct data eigenvalues in 2D or two groups in 3D. Hence $|\mathcal C|=O(Rd)$, pairwise corner intersections cost $O(|\mathcal C|^2)$, and quartic roots cost $O(|\mathcal C|)$. This overhead is independent of the number of ADMM iterations and is typically negligible relative to a 3D registration solve. No full $2n\times2n$ or $3n\times3n$ iteration matrix is formed.
 
 \section{Reproducible Experiments and Results}
-All calculations used IEEE double precision, NumPy 2.2.6 and SciPy 1.15.3.  The seed was 20260806.  Raw JSON/CSV files, the configuration fixed before the controlled run, and generating scripts accompany the paper.  The controlled gate was a median relative spectral-radius gap below 0.10.  We used dense eigendecomposition only on systems of at most 50 unknowns.  Direct joint optimization was a diagnostic differential-evolution calculation (seeded, population multiplier 5, eight generations, followed by polishing), not a proposed selector.
+All calculations used IEEE double precision, NumPy 2.2.6 and SciPy 1.15.3 with seed 20260806.  Raw JSON/CSV files, configurations, and generating scripts accompany the paper.  The progressive gates require median enclosure gap below 0.25, median selected-parameter spectral-radius gap below 0.10, and no systematic boundary collapse.  Small-system oracle values use direct eigendecomposition and multistart local optimization; this numerical optimization is diagnostic only.
 
 \subsection{Experiment 1: constant-coefficient verification}
 We used $n\times n$ periodic grids, data curvatures $(0.2,2.3)$, and first-order regularization with $(\beta,\gamma)=(0.2,0.1)$.  The finite selector returned $(\rho,\alpha)=(0.5435121024,1.8981520705)$ on every grid.
@@ -498,38 +591,57 @@ $n$ & Direct radius & Envelope & Selection (ms)\\
 \end{tabular}
 \end{table}
 
-\subsection{Experiment 2: controlled variable coefficients}
-We varied grid size (4 and 5), gradient magnitude contrast (1, 4, and 16), and orientation winding (0, 1, and 3), for 18 preconfigured cases.  A single mean-Hessian patch deliberately tests the global certificate under mismatch.  Every computed full radius satisfied the theorem.  Nevertheless, the correction $\alpha\delta/\rho$ dominated selection.  In all cases the minimizer was $(\rho,\alpha)=(100,10^{-6})$, at the allowed boundaries, and the full radius was numerically one.  Relative gaps to direct joint spectral optimization had median 2.904, mean 2.839, and maximum 4.505.  Thus Gate~2 failed.
+\subsection{Experiment 2: structured enclosures on controlled fields}
+We retained the earlier 18 cases spanning grid sizes 4/5, magnitude contrasts 1/4/16, and orientation windings 0/1/3.  Every structured certificate enclosed the exact radius.  Exact block-resolvent weighting reduced the median enclosure gap to 0.166 but collapsed in 6 cases.  Signed block disks and row-sum rectangles had no collapse; their median enclosure/parameter gaps were 0.644/0.560 and 0.602/0.431.  The comparison rectangle improved these to 0.595/0.386, also without collapse.  Sign preservation therefore fixes the pathological boundary behavior, while Perron comparison gives a further strict methodological improvement.
 
 \begin{table}[h]
 \centering
-\caption{Controlled variable-coefficient result and predeclared gate.}
-\begin{tabular}{lrr}
+\caption{Controlled structured-envelope results (18 cases).}
+\begin{tabular}{lrrr}
 \toprule
-Measure & Result & Criterion\\
+Method & Enclosure gap & Parameter gap & Collapses\\
 \midrule
-Certificate violations & 0/18 & 0\\
-Median relative radius gap & 2.904 & $<0.10$\\
-Gate 2 & failed & pass\\
+Block resolvent & 0.166 & 0.926 & 6\\
+Block Gershgorin & 0.644 & 0.560 & 0\\
+Commutator rectangle & 0.602 & 0.431 & 0\\
+Comparison rectangle & 0.595 & 0.386 & 0\\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\begin{figure}[h]
+\centering\includegraphics[width=.72\linewidth]{../figures/structured_parameter_gaps.pdf}
+\caption{Parameter-quality distributions on the original stress set.  The dashed line is Gate~3.}
+\end{figure}
+
+\subsection{Experiment 3: separated variation regimes}
+We next isolated periodic magnitude variation, smooth orientation variation, a sharp orientation interface, and Gaussian-smoothed synthetic image gradients on $3\times3$ grids (ten cases, nine labeled smooth).  The finite predictor formed corners from every exact pixelwise rank-one curvature and the exact regularizer-symbol endpoints.  It achieved median parameter gaps 0.057 overall and 0.027 on smooth cases with zero collapse.  Predict-then-certify returned the same parameters and a rigorous comparison bound below one in all ten cases.  Its median relative certificate gap was 1.29, so it passes convergence, parameter-quality, and robustness gates but not the 0.25 tightness gate.  This is stronger than either ingredient alone: useful parameters are selected without search, and their full variable-coefficient convergence is certified.
+
+\begin{figure}[h]
+\centering\includegraphics[width=.72\linewidth]{../figures/smooth_parameter_gaps.pdf}
+\caption{Smooth-field parameter gaps.  Pixelwise curvature enumeration passes the 0.10 empirical quality gate; rigorous structured enclosures do not.}
+\end{figure}
+
+\begin{figure}[h]
+\centering\includegraphics[width=.68\linewidth]{../figures/predict_then_certify.pdf}
+\caption{Predict-then-certify on nine smooth cases.  Every rigorous bound is below one, although conservatism remains visible.}
+\end{figure}
+
 \subsection{Decision-gate consequence}
-The protocol required stopping before expensive registration if the controlled median gap exceeded 0.10.  Accordingly, no public medical dataset was downloaded and no Dice, landmark, Jacobian, GPU-memory, or end-to-end runtime value is reported.  This is a scientific limitation, but it prevents a loose certificate from being presented as a useful tuner.  The implementation still includes residual/objective stopping rules, finite differences, Hessian construction, transform solves, and deformation-Jacobian tests for future work.
+The revised phase produces an exact constant-gradient theorem and a variable-coefficient method combining useful search-free parameters with a rigorous convergence certificate.  Certificate tightness and experiment scale still fail the threshold required for medical claims, so public-data and end-to-end runtime studies remain gated.
 
 \section{Discussion}
 \subsection{What is guaranteed}
-The analysis provides a rigorous upper bound for the full variable-coefficient ADMM/oADMM iteration relative to an explicitly constructed normal local surrogate. The standard-ADMM penalty exactly minimizes this certified envelope over the prescribed interval through finite candidate evaluation. The relaxation parameter exactly minimizes the certified conditional envelope at the selected penalty.  These mathematical statements do not imply that the minimizer is a useful contraction.
+The constant-gradient joint optimum is contained in a finite algebraic candidate set.  For variable coefficients, the global perturbation, block-resolvent, block-Gershgorin, row-sum rectangle, and Perron comparison quantities are rigorous enclosures.  Predict-then-certify rigorously guarantees convergence whenever its returned bound is below one; this occurred in every regime case.  The predictor alone is not claimed to be an enclosure.
 
 \subsection{What is not claimed}
-The selected parameters are not claimed to minimize the exact full spectral radius. The guarantee is minimization of a computable upper envelope. Tightness depends on the surrogate errors $\delta_H$ and $\delta_G$. The paper also does not claim that ADMM dominates multigrid, Newton--Krylov, or every learned registration method; comparisons concern a particular split registration solver and total runtime under matched accuracy constraints.
+Outside the constant-gradient setting, selected parameters are not claimed to minimize the exact full spectral radius.  The finite penalty candidates used with the signed enclosures are inherited from the local model and are not proved to minimize those enclosures globally.  Most importantly, the empirically successful pixel-curvature rule is predictive rather than rigorous when orientations vary.
 
 \subsection{Novelty after comparison with Song et al.}
-Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula, whereas our derivation uses the rank-one registration Hessian, a scalar Sobolev symbol, and a finite algebraic envelope with a noncommuting certificate.  That distinction survives at the level of analysis.  The practical claim does not: the certified selector is markedly worse than direct spectral optimization in our controlled cases.  The present contribution is therefore a limitation result and reproducible warning, not a competitive replacement for Song et al.
+Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula.  Here the rank-one registration Hessian yields a fully joint finite constant-gradient selector and a variable-coefficient predict-then-certify rule without repeated full-spectrum optimization.  The latter simultaneously achieved near-oracle synthetic parameters and certified convergence, although comparison against Song et al. on registration runtime remains future work.
 
 \subsection{Limitations}
-The certified envelope may be loose when image gradients vary sharply or when patch decoupling produces a large $\delta_G$. Patch selection itself introduces design choices. The theory concerns each convex linearized subproblem; global convergence of the outer nonlinear diffeomorphic registration scheme requires separate assumptions. Higher-order, anisotropic, incompressible, or spatially varying regularizers require matrix-valued symbols, although the same surrogate-and-perturbation framework remains applicable.
+Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$.  Experiments are small and synthetic, the diagnostic oracle is numerical, and no confidence interval or medical-registration metric is available.  A certificate below one proves convergence but its loose value does not predict the true rate accurately.  The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
 
 \subsection{Extensions}
 Promising extensions include overlapping Schwarz-type local symbols, adaptive patch refinement driven by the certificate, multi-penalty ADMM with separate data and regularization metrics, and online reuse of local curvature summaries across pyramid levels. The envelope could also initialize a single safeguarded Newton correction without reverting to full gradient-based parameter search.
@@ -538,7 +650,7 @@ Promising extensions include overlapping Schwarz-type local symbols, adaptive pa
 The accompanying repository contains source code, tests, the fixed YAML configuration, environment specifications, raw JSON/CSV outputs, the research log, and exact reproduction commands.  No external patient data were used: the decision gate failed on generated fields, so downloading or processing a medical benchmark was neither necessary nor scientifically justified.  All synthetic fields are regenerated from the recorded seed.
 
 \section{Conclusion}
-Local spectral analysis gives correct algebra, exact constant-coefficient factors, and a valid noncommuting perturbation certificate.  It does not, with the global operator-norm mismatch used here, give a useful joint ADMM/oADMM tuner: the correction rewards vanishing relaxation and large penalty, so the certified minimizer stagnates.  The predeclared usefulness gate failed, and claims about real registration speed or quality are therefore unsupported.  Progress requires a substantially sharper structured or a posteriori bound---for example, interface-local estimates or weighted resolvent norms---before costly medical-registration evaluation is justified.
+The analysis delivers exact joint oADMM tuning for constant-gradient registration and a positive variable-coefficient methodology.  Pixelwise curvature enumeration selects near-oracle parameters without continuous search; a separate Perron comparison matrix then certifies the full noncommuting iteration.  Across ten regimes, every bound was below one, median parameter gap was 0.057 overall and 0.027 for smooth fields, and no selection collapsed.  The certificate remains too loose to predict the convergence factor accurately, and larger repeated studies are needed before registration claims.  The central methodological result is nevertheless stronger: conservatism no longer corrupts parameter selection, while rigor is retained as an explicit accept/reject certificate.
 
 \appendix
 \section{Proof of the Reduced Cayley Representation}\label{app:reduced}

@@ -1,9 +1,9 @@
 {
-  "n_cases": 18,
-  "median_relative_radius_gap": 2.9035536839498834,
-  "mean_relative_radius_gap": 2.838738936299757,
-  "max_relative_radius_gap": 4.50499221898769,
+  "n_cases": 324,
+  "median_relative_radius_gap": 3.751316920614258e-07,
+  "mean_relative_radius_gap": 3.7070796874145707e-07,
+  "max_relative_radius_gap": 4.978719613486459e-07,
   "certificate_failures": 0,
   "gate_threshold": 0.1,
-  "gate_2_passed": false
+  "gate_2_passed": true
 }

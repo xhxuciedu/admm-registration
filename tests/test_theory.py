@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import block_diag
 
-from src.candidate_roots import select_alpha, select_rho
+from src.candidate_roots import select_alpha, select_joint_constant, select_rho
 from src.local_envelope import certified_envelope, local_envelope, theta
 from src.spectral_tools import full_state_matrix, reduced_matrix, spectral_radius
 from src.admm_registration import solve_quadratic
@@ -64,3 +64,14 @@ def test_solver_stopping_rules_and_objective():
     assert result['converged']
     np.testing.assert_allclose(result['v'],exact,rtol=1e-7,atol=1e-9)
     assert result['history'][-1,0] < 1e-8
+
+
+def test_joint_constant_candidates_match_dense_2d_search():
+    corners=np.array([[.05,.1],[.05,2.],[1.7,.1],[1.7,2.]])
+    rho,alpha,value,_=select_joint_constant(corners,(.01,10.))
+    rgrid=np.geomspace(.01,10,1600); agrid=np.linspace(1e-6,2,1200)
+    dense=np.inf
+    for r in rgrid:
+        t=theta(corners[:,0],corners[:,1],r)
+        dense=min(dense,float(np.min(np.max(np.abs(1-agrid[:,None]+agrid[:,None]*t),axis=1))))
+    assert value <= dense+2e-5

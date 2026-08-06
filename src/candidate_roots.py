@@ -71,3 +71,31 @@ def select_alpha(corners, rho, interval=(1e-6, 2.0), delta=0.0):
     vals = np.array([certified_envelope(corners, rho, a, delta, 0.0) for a in cand])
     i = int(np.argmin(vals))
     return float(cand[i]), float(vals[i]), cand
+
+
+def joint_constant_candidates(corners, interval):
+    """Finite rho set containing the global constant-coefficient oADMM optimum.
+
+    Between branch intersections, a=min(theta_c) and b=max(theta_c) are fixed
+    rational branches. Eliminating the exact fixed-rho relaxation gives either
+    (b-a)/(2-a-b) or 2b-1. We enumerate roots of both branchwise derivatives,
+    a+b=1 transitions, branch intersections, and interval endpoints.
+    """
+    lo,hi=map(float,interval); corners=np.unique(np.asarray(corners,float),axis=0)
+    nd=[_num_den(*c) for c in corners]; cand=list(rho_candidates(corners,interval,0))
+    for na,da in nd:
+      for nb,db in nd:
+        num=nb*da-na*db; den=2*da*db-na*db-nb*da
+        deriv=num.deriv()*den-num*den.deriv()
+        cand.extend(_positive_real_roots(deriv,lo,hi))
+        transition=na*db+nb*da-da*db
+        cand.extend(_positive_real_roots(transition,lo,hi))
+    return np.asarray(sorted(set(round(float(x),13) for x in cand)))
+
+
+def select_joint_constant(corners, rho_interval, alpha_interval=(1e-6,2.0)):
+    rhos=joint_constant_candidates(corners,rho_interval); best=None
+    for rho in rhos:
+        alpha,value,_=select_alpha(corners,rho,alpha_interval,0)
+        if best is None or value < best[0]: best=(value,float(rho),alpha)
+    return best[1],best[2],best[0],rhos

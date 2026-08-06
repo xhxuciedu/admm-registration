@@ -29,3 +29,22 @@
 
 - Reframed the paper as a negative-results report. Retained the verified algebra and certificate, removed all placeholders, and explicitly reported why the certificate is not presently a useful tuner.
 - Recommended next direction: interface-local or weighted resolvent bounds, followed by rerunning Gate 2 before any medical-data study.
+
+## 2026-08-06: signed structured-envelope phase
+
+- Kept the global certificate as a baseline and retained the exact global regularizer in every new method.
+- Implemented the exact pixel-block Cayley mismatch. On the original 18 cases its median enclosure gap improved to 0.166, but its median parameter gap was 0.926 and 6/18 selections still collapsed.
+- Proved and implemented block-Gershgorin disks using exact $C_i$ blocks and exact scalar $K_\rho$. All 18 certificates held; no selection collapsed. Median enclosure and parameter gaps were 0.644 and 0.560.
+- Derived the local symmetric/skew blocks $S_{ij}=k_{ij}(C_i+C_j)/2$ and $Q_{ij}=k_{ij}(C_i-C_j)/2$. Hermitian block-Gershgorin plus the symmetric block-norm row sum gives the rectangle certificate. The skew radius is zero for constant Hessians. All numerical certificate tests passed; median parameter gap improved to 0.431 without collapse.
+- Derived and tested $\|[C_H,C_G]\|\le4\rho^2\|[H,G]\|/((h_{\min}+\rho)^2(g_{\min}+\rho)^2)$ from the inverse commutator identity. Tests compare against the explicit Cayley commutator.
+- Completed the joint constant-gradient theorem. Eliminating fixed-$\rho$ relaxation produces $(b-a)/(2-a-b)$ or $2b-1$; branch intersections, $a+b=1$ transitions, stationary polynomial roots, and endpoints form a finite candidate superset. A 2D dense diagnostic test agrees with the finite result.
+- Ran ten separated regimes (magnitude, orientation, discontinuity, and Gaussian-smoothed image gradients). The exact pixel-curvature predictor, which is not certified under rotation, achieved median parameter gap 0.057 overall and 0.027 over nine smooth cases, with no collapse. A strengthened multistart full-spectrum oracle was used after a low-budget differential-evolution oracle was found suboptimal.
+- Gates: exact algebra passes; the pixel-curvature predictor passes empirical parameter quality and robustness; none of the rigorous variable-coefficient enclosures passes both tightness and parameter-quality gates. Real-data experiments therefore remain gated.
+
+## 2026-08-06: Perron comparison and predict-then-certify
+
+- Replaced maximum block row sums by scalar comparison matrices using $\lambda_{\min}(\operatorname{diag}(d^-)-B^S)$, $\lambda_{\max}(\operatorname{diag}(d^+)+B^S)$, and the Perron root of $B^Q$. Tests verify rigor and dominance over row sums.
+- On the 18-case stress set, the comparison rectangle improved median parameter gap from 0.431 to 0.386, with zero violations and zero collapses.
+- Introduced predict-then-certify: pixel curvatures select parameters; the comparison rectangle is evaluated once as an accept/reject certificate. This prevents a loose certificate from corrupting a good minimizer.
+- In all ten regime cases the rigorous returned bound was below one. Median parameter gaps were 0.057 overall and 0.027 on smooth fields, with no collapse. Median relative certificate gap was 1.29, so tightness remains the limitation.
+- A deterministic angular numerical-radius certificate with an explicit Lipschitz remainder was rigorous but looser in this study; it remains in code as a documented negative refinement.

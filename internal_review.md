@@ -9,3 +9,11 @@ Likely objections include the small grids, one trial per factorial setting, a si
 Recommended next work: derive patch-weighted resolvent bounds or an a posteriori Arnoldi/Lanczos correction; test multiple/overlapping patches; use a gate based on joint optimum as now implemented; then expand trial counts and only proceed to a small licensed 2D benchmark if the gate passes.
 
 Recommended venue in the current state: a numerical optimization workshop, reproducibility/negative-results track, or technical report. It is not ready for a medical imaging methods venue.
+
+## Revised assessment after structured-envelope work
+
+The paper is no longer only a negative report. The joint constant-gradient finite-candidate theorem is a complete positive result, and exact pixel-curvature enumeration gives a strong empirical predictor (median smooth-case parameter gap 0.027). Block-Gershgorin and commutator rectangles rigorously preserve sign and eliminate the former boundary collapse. However, their parameter gaps remain 0.560 and 0.431 on the original stress set and above 0.3 on the small smooth-regime study. The pixel-curvature predictor must not be described as a spectral enclosure until a rotating-field proof is found.
+
+The most likely reviewer objection is now sharper: why prefer a rigorous bound that does not tune well, or a predictor that is not rigorous? The honest answer is that this revision maps the gap between them and identifies the symmetric dense-Cayley row sum, rather than the skew commutator term, as the remaining bottleneck. Larger grids, repetitions, adaptive patches, and real registration are still absent. The appropriate framing remains a theory/technical report, not yet a validated medical-registration method.
+
+Predict-then-certify partially resolves this objection: the predictor chooses useful parameters and the independent Perron comparison bound certifies convergence without moving them. All ten regime bounds were below one, while median parameter quality passed the gate. This is a legitimate positive methodology, but not evidence of registration runtime benefit. The remaining reviewer concern is certificate tightness (median relative gap 1.29) and the very small synthetic sample.
