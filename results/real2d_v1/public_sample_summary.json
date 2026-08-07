@@ -1,0 +1,232 @@
+{
+  "adaptive_bb_proxy": {
+    "n": 6,
+    "median_total_seconds": 4.105087857693434,
+    "iqr_total_seconds": [
+      3.6498696240596473,
+      13.48842614190653
+    ],
+    "median_total_inner_iterations": 492.5,
+    "median_mse_after": 0.0030350881962955,
+    "median_ncc_after": 0.9687728245435965,
+    "median_ssim_after": 0.6901534876212918,
+    "median_displacement_rmse": 2.4964464085452303,
+    "min_jacobian": 0.0502051140573718,
+    "failure_rate": 0.0,
+    "tuning_fraction": 6.118299385364597e-06,
+    "runtime_median_ci95": [
+      3.5494168093428016,
+      16.551999751478434
+    ],
+    "iterations_median_ci95": [
+      467.0,
+      525.0
+    ]
+  },
+  "fixed_1_1": {
+    "n": 6,
+    "median_total_seconds": 15.339688275009394,
+    "iqr_total_seconds": [
+      13.160070315003395,
+      33.797420307062566
+    ],
+    "median_total_inner_iterations": 2005.5,
+    "median_mse_after": 0.0030363863661392,
+    "median_ncc_after": 0.9687593185050483,
+    "median_ssim_after": 0.6900571362314214,
+    "median_displacement_rmse": 2.496964936670615,
+    "min_jacobian": 0.0500609008928701,
+    "failure_rate": 0.0,
+    "tuning_fraction": 2.161618379814675e-06,
+    "runtime_median_ci95": [
+      12.958954152651131,
+      49.19185537099838
+    ],
+    "iterations_median_ci95": [
+      1975.5,
+      2278.5
+    ]
+  },
+  "fixed_1_18": {
+    "n": 6,
+    "median_total_seconds": 9.465624603442848,
+    "iqr_total_seconds": [
+      8.299925211817026,
+      13.811667879577726
+    ],
+    "median_total_inner_iterations": 1205.0,
+    "median_mse_after": 0.00303575248747535,
+    "median_ncc_after": 0.9687659150876491,
+    "median_ssim_after": 0.6901039968750946,
+    "median_displacement_rmse": 2.4967215907010285,
+    "min_jacobian": 0.0501318368793609,
+    "failure_rate": 0.0,
+    "tuning_fraction": 3.1149798704377206e-06,
+    "runtime_median_ci95": [
+      8.00531605631113,
+      26.090421995148063
+    ],
+    "iterations_median_ci95": [
+      1194.5,
+      1354.5
+    ]
+  },
+  "manual_global": {
+    "n": 6,
+    "median_total_seconds": 2.7166145080700517,
+    "iqr_total_seconds": [
+      2.281354523729533,
+      10.279006191994993
+    ],
+    "median_total_inner_iterations": 319.5,
+    "median_mse_after": 0.0030353442468439,
+    "median_ncc_after": 0.9687701726464721,
+    "median_ssim_after": 0.6901351563812883,
+    "median_displacement_rmse": 2.496547106815875,
+    "min_jacobian": 0.0501710942455698,
+    "failure_rate": 0.0,
+    "tuning_fraction": 1.03841363073764e-05,
+    "runtime_median_ci95": [
+      2.2301887813955545,
+      13.366037142463028
+    ],
+    "iterations_median_ci95": [
+      310.5,
+      344.5
+    ]
+  },
+  "predict_every_outer": {
+    "n": 6,
+    "median_total_seconds": 1.810344073921442,
+    "iqr_total_seconds": [
+      1.5803393982350826,
+      5.619998001959175
+    ],
+    "median_total_inner_iterations": 164.5,
+    "median_mse_after": 0.0030351736504334002,
+    "median_ncc_after": 0.968771942196816,
+    "median_ssim_after": 0.6901473400481895,
+    "median_displacement_rmse": 2.4964815715116613,
+    "min_jacobian": 0.0501933324914739,
+    "failure_rate": 0.0,
+    "tuning_fraction": 0.1854333681865004,
+    "runtime_median_ci95": [
+      1.5537603916600347,
+      8.03648991137743
+    ],
+    "iterations_median_ci95": [
+      159.0,
+      176.5
+    ]
+  },
+  "predict_pair_full": {
+    "n": 6,
+    "median_total_seconds": 2.2306180810555816,
+    "iqr_total_seconds": [
+      2.1312037017196417,
+      2.2367460438981652
+    ],
+    "median_total_inner_iterations": 180.0,
+    "median_mse_after": 0.0030351626428021857,
+    "median_ncc_after": 0.9687720662533676,
+    "median_ssim_after": 0.6901487437687832,
+    "median_displacement_rmse": 2.4964622054913064,
+    "min_jacobian": 0.05019666617637525,
+    "failure_rate": 0.0,
+    "tuning_fraction": 0.02017339631385288,
+    "runtime_median_ci95": [
+      1.9439321663230658,
+      2.416527608409524
+    ],
+    "iterations_median_ci95": [
+      167.5,
+      182.0
+    ]
+  },
+  "predict_per_level": {
+    "n": 6,
+    "median_total_seconds": 1.4636206021532416,
+    "iqr_total_seconds": [
+      1.2465707082301378,
+      4.897478204686195
+    ],
+    "median_total_inner_iterations": 166.5,
+    "median_mse_after": 0.003035169315148,
+    "median_ncc_after": 0.9687719851693525,
+    "median_ssim_after": 0.6901475548388722,
+    "median_displacement_rmse": 2.496484432506003,
+    "min_jacobian": 0.0501912644817262,
+    "failure_rate": 0.0,
+    "tuning_fraction": 0.04589536356469597,
+    "runtime_median_ci95": [
+      1.2271761437878013,
+      6.316543720662594
+    ],
+    "iterations_median_ci95": [
+      163.0,
+      182.0
+    ]
+  },
+  "predict_per_pair": {
+    "n": 6,
+    "median_total_seconds": 2.2882572738453746,
+    "iqr_total_seconds": [
+      2.257208798080683,
+      2.310736270621419
+    ],
+    "median_total_inner_iterations": 184.0,
+    "median_mse_after": 0.0030352249028317,
+    "median_ncc_after": 0.9687714113395121,
+    "median_ssim_after": 0.6901436687697394,
+    "median_displacement_rmse": 2.4964927900355467,
+    "min_jacobian": 0.0501893106828926,
+    "failure_rate": 0.0,
+    "tuning_fraction": 0.016648899602707646,
+    "runtime_median_ci95": [
+      2.039990699850023,
+      2.5239959731698036
+    ],
+    "iterations_median_ci95": [
+      181.0,
+      198.0
+    ]
+  },
+  "residual_balance": {
+    "n": 6,
+    "median_total_seconds": 8.875435218214989,
+    "iqr_total_seconds": [
+      7.310134269762784,
+      29.956224128603935
+    ],
+    "median_total_inner_iterations": 1113.0,
+    "median_mse_after": 0.00303636670428835,
+    "median_ncc_after": 0.9687595269270448,
+    "median_ssim_after": 0.69005887042993,
+    "median_displacement_rmse": 2.4969525952272225,
+    "min_jacobian": 0.05006204547555,
+    "failure_rate": 0.0,
+    "tuning_fraction": 3.3399953650482405e-06,
+    "runtime_median_ci95": [
+      7.262931950390339,
+      37.987443355843425
+    ],
+    "iterations_median_ci95": [
+      1105.0,
+      1254.0
+    ]
+  },
+  "_design": {
+    "validation_cases": [
+      1,
+      2
+    ],
+    "held_out_cases": [
+      3,
+      4,
+      5
+    ],
+    "manual_rho": 0.1,
+    "manual_alpha": 1.0,
+    "adaptive_bb_note": "safeguarded BB proxy; not claimed as Xu et al. AADMM"
+  }
+}

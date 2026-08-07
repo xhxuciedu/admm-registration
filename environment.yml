@@ -10,5 +10,6 @@ dependencies:
   - pytest=8.4
   - pytest-cov=6.3
   - pyyaml=6.0
+  - scikit-image=0.25
+  - psutil=7
   - pip=26.2
-

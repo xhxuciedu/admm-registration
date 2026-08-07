@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.linalg import solve
+from scipy import sparse
+from scipy.sparse.linalg import eigsh
 
 from .local_envelope import local_envelope
 from .spectral_tools import cayley
@@ -157,6 +159,45 @@ def angular_numerical_radius_bound(blocks,g0,rho,alpha=1.0,n_angles=64):
             comp[i,j]=comp[j,i]=v
         sampled=max(sampled,float(np.linalg.eigvalsh(comp)[-1]))
     return sampled+L*np.pi/n_angles
+
+
+def truncated_kernel_comparison_envelope(blocks,symbol,rho,alpha=1.0,radius=3):
+    """Scalable periodic comparison certificate with a rigorous l1 tail.
+
+    The kept Cayley convolution offsets form sparse comparison matrices. The
+    omitted convolution has 2-norm bounded by its kernel l1 norm.
+    """
+    symbol=np.asarray(symbol,float);shape=symbol.shape;n=int(np.prod(shape));c=cayley_blocks(blocks,rho)
+    if len(shape)!=2 or len(c)!=n:raise ValueError('2D symbol/block shape mismatch')
+    kernel=np.fft.ifftn((symbol-rho)/(symbol+rho)).real
+    offsets=[];tail=0.
+    for iy in range(shape[0]):
+      dy=iy if iy<=shape[0]//2 else iy-shape[0]
+      for ix in range(shape[1]):
+        dx=ix if ix<=shape[1]//2 else ix-shape[1];value=float(kernel[iy,ix])
+        if max(abs(dy),abs(dx))<=radius:offsets.append((dy,dx,value))
+        else:tail+=abs(value)
+    rows=[];cols=[];bsdata=[];bqdata=[]
+    for y in range(shape[0]):
+      for x in range(shape[1]):
+        i=y*shape[1]+x
+        for dy,dx,value in offsets:
+          if dy==0 and dx==0:continue
+          j=((y+dy)%shape[0])*shape[1]+((x+dx)%shape[1])
+          rows.append(i);cols.append(j);bsdata.append(abs(value)*np.linalg.norm((c[i]+c[j])/2,2));bqdata.append(abs(value)*np.linalg.norm((c[i]-c[j])/2,2))
+    bs=sparse.csr_matrix((bsdata,(rows,cols)),shape=(n,n));bq=sparse.csr_matrix((bqdata,(rows,cols)),shape=(n,n))
+    kii=float(kernel[0,0]);de=np.linalg.eigvalsh(kii*c);lower=sparse.diags(de[:,0])-bs;upper=sparse.diags(de[:,-1])+bs
+    if n<=4:
+        m=float(np.linalg.eigvalsh(lower.toarray())[0]);big_m=float(np.linalg.eigvalsh(upper.toarray())[-1]);eta=float(np.max(np.abs(np.linalg.eigvalsh(bq.toarray()))))
+    else:
+        m=float(eigsh(lower,k=1,which='SA',return_eigenvectors=False,tol=1e-8)[0]);big_m=float(eigsh(upper,k=1,which='LA',return_eigenvectors=False,tol=1e-8)[0])
+        if bq.nnz == 0 or np.max(np.abs(bq.data),initial=0.) == 0.:
+            eta=0.
+        else:
+            eta=max(abs(float(eigsh(bq,k=1,which='LA',return_eigenvectors=False,tol=1e-8)[0])),abs(float(eigsh(bq,k=1,which='SA',return_eigenvectors=False,tol=1e-8)[0])))
+    real=1-alpha/2+alpha*np.asarray([m,big_m])/2;base=float(np.max(np.sqrt(real**2+(alpha*eta/2)**2)))
+    correction=alpha/2*float(max(np.linalg.norm(ci,2) for ci in c))*tail
+    return base+correction,{'tail_l1':tail,'nnz':int(bs.nnz),'radius':radius,'base':base,'correction':correction}
 
 
 def _rectangle_candidates_from_bounds(m,big_m,eta,interval):

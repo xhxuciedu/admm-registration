@@ -11,6 +11,7 @@ from src.structured_envelopes import (
     gradient_variation_measures,
     comparison_rectangle_bounds, comparison_rectangle_envelope, select_comparison_alpha,
     angular_numerical_radius_bound,
+    truncated_kernel_comparison_envelope,
 )
 
 
@@ -101,3 +102,14 @@ def test_angular_numerical_radius_certificate():
         angular=angular_numerical_radius_bound(blocks,g0,rho,alpha,48)
         assert actual<=angular+1e-10
         assert angular<=comparison_rectangle_envelope(blocks,g0,rho,alpha)+.15
+
+
+def test_truncated_kernel_certificate_is_rigorous():
+    blocks,h,g0,g=make_system(4)
+    # Use the actual FFT-ordered symbol.
+    from src.operators import regularizer_symbol
+    symbol=regularizer_symbol((4,4),.2,.1)
+    for radius in (0,1,2):
+        bound,meta=truncated_kernel_comparison_envelope(blocks,symbol,.6,1.7,radius)
+        assert spectral_radius(reduced_matrix(h,g,.6,1.7))<=bound+1e-9
+        assert meta['tail_l1']>=0

@@ -1,0 +1,13 @@
+study,side,pixels,unique_curvatures,milliseconds
+image_scaling,8,64,65,27.710338
+image_scaling,16,256,257,27.710093
+image_scaling,32,1024,1025,28.967356
+image_scaling,64,4096,4097,26.889577
+image_scaling,128,16384,16385,28.755192
+image_scaling,256,65536,65537,27.565078
+image_scaling,512,262144,262145,27.411674
+image_scaling,1024,1048576,1048577,31.730133
+legacy_branch_scaling,,,2,28.56126
+legacy_branch_scaling,,,4,116.424716
+legacy_branch_scaling,,,8,689.008187
+legacy_branch_scaling,,,16,6131.114695

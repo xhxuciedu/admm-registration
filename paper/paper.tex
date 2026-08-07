@@ -15,7 +15,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{Search-Free ADMM for Diffeomorphic Registration}
-\rhead{Draft manuscript}
+\rhead{Anonymous submission}
 \cfoot{\thepage}
 \setlength{\headheight}{14pt}
 
@@ -41,13 +41,13 @@
 
 \title{\textbf{Signed Local Spectral Envelopes for Search-Free ADMM Tuning in Diffeomorphic Image Registration}}
 \author{Anonymous Authors}
-\date{Revised research report, August 2026}
+\date{August 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We derive and test signed, registration-specific spectral enclosures for ADMM and over-relaxed ADMM (oADMM).  The exact reduced operator is $(1-\alpha/2)I+(\alpha/2)C_HC_G$.  For constant image gradients and a scalar transform-diagonalizable Sobolev regularizer, its modal factors reduce to curvature corners; the globally optimal joint $(\rho,\alpha)$ lies in a finite algebraic candidate set.  For spatially varying rank-one Hessian blocks, we retain the exact regularizer and derive block disks, a commutator rectangle, and a sharper comparison-matrix rectangle based on three scalar $n\times n$ eigenproblems rather than the full $dn\times dn$ iteration.  We then separate prediction from certification: exact pixelwise curvatures choose parameters algebraically, after which one comparison-matrix evaluation certifies the chosen iteration.  In ten separated synthetic regimes this predict-then-certify method produced a rigorous bound below one in every case, never collapsed, and retained median spectral-radius gaps to full optimization of 0.057 overall and 0.027 over nine smooth cases.  The certificates are conservative (median relative bound gap 1.29), but parameter quality and certified convergence hold simultaneously.  Constant-gradient results are exact to machine precision; 18 broader stress cases verify every enclosure without violation.  These results provide a positive search-free methodology while identifying certificate tightness, rather than parameter quality, as the remaining obstacle before real-data claims.
+We derive and validate a registration-specific, search-free selector for ADMM and over-relaxed ADMM (oADMM).  The exact reduced operator is $(1-\alpha/2)I+(\alpha/2)C_HC_G$.  For rank-one registration Hessians and a scalar transform-diagonalizable Sobolev regularizer, we prove that the global constant-model predictor needs exactly four curvature-symbol corners and that its joint optimum lies in a finite algebraic candidate set.  For variable coefficients we retain the exact regularizer and derive block-disk, commutator, Perron-comparison, and truncated-kernel enclosures; prediction and certification are deliberately separated.  The four-corner implementation matched pixelwise enumeration in 10,000 randomized configurations and took about 24 ms after endpoint extraction.  Smooth synthetic cases retained a median spectral-radius gap of 0.027 to numerical optimization.  On 134 landmarked pairs from the public FIRE retinal benchmark at $128^2$, one-shot prediction reduced median ADMM iterations by 40.7\% and total runtime by 33.6\% (bootstrap 95\% interval 32.5--34.7\%) versus a fixed external pair, with 2.0\% tuning overhead, indistinguishable landmark error, and no nonpositive Jacobians.  On ten CIMA histology pairs, it similarly reduced total runtime by 20.1\%.  Certification remained rigorous through $64^2$ but too conservative and expensive for routine use.
 \end{abstract}
 
 \section{Introduction}
@@ -66,7 +66,7 @@ The penalty $\rho$ and relaxation $\alpha$ strongly affect convergence. Fixed de
 
 This work asks a narrower question:
 \begin{quote}
-Can the registration structure be used to replace iterative spectral optimization by a finite, analytically generated parameter set while retaining a rigorous upper bound for the full variable-coefficient iteration?
+Can the registration structure replace iterative spectral optimization by a finite, analytically generated parameter predictor, with an optional rigorous diagnostic for the full variable-coefficient iteration?
 \end{quote}
 
 Our answer is based on local Fourier analysis (LFA), a classical tool for predicting and optimizing stationary iterations for constant-coefficient differential operators \cite{ChanElman1989,WienandsJoppich2005}. Standard LFA is exact for translation-invariant periodic problems, while nonstandard variants can remain predictive for jumping and random coefficients \cite{Kumar2019,Rodrigo2017}. Here, the coefficients that vary are the image-gradient blocks in the data Hessian. We freeze those blocks over patches, derive the exact patchwise ADMM symbol, and then control the discrepancy to the full iteration by a resolvent perturbation argument.
@@ -75,37 +75,30 @@ Our answer is based on local Fourier analysis (LFA), a classical tool for predic
 \begin{enumerate}[leftmargin=2em]
 \item We derive an exact reduced Cayley-product representation for ADMM and oADMM applied to the split registration quadratic.
 \item We introduce a frozen-patch local spectral model in which the ADMM spectrum is explicit. The worst local factor is attained at finitely many data-curvature and regularizer-frequency corners.
-\item We prove a noncommuting perturbation bound
-\[
-\spr(T_{\rho,\alpha})
-\le U_{\mathrm{LFA}}(\rho,\alpha)
-+\frac{\alpha}{\rho}(\delta_H+\delta_G),
-\]
-where $U_{\mathrm{LFA}}$ is the exact frozen-patch envelope and $\delta_H,\delta_G$ quantify the data and regularizer surrogate errors.
-\item We give a finite-candidate, search-free selector. For standard ADMM, the global minimizer of the certified envelope on a prescribed interval is found from explicit corner intersections and quartic stationary equations. Conditional on the selected $\rho$, the certified oADMM relaxation is selected from a finite closed-form set.
-\item We provide a reproducible experimental program designed to test envelope tightness, parameter optimality, and total runtime on synthetic systems and public two- and three-dimensional registration benchmarks.
+\item We retain the exact convolutional regularizer and derive signed block-Gershgorin, commutator, row-sum, Perron-comparison, and truncated-kernel enclosures for the noncommuting variable-coefficient iteration. The earlier global additive perturbation is retained only as a conservative baseline.
+\item We give a finite-candidate, search-free constant-model predictor. For rank-one registration blocks, its global curvature range reduces exactly to four data-symbol corners; conditional relaxation is selected from a finite closed-form set. Parameter prediction and optional certification are deliberately separate.
+\item We validate the method on 10,000 randomized curvature configurations, controlled synthetic regimes, 134 public FIRE retinal landmark pairs, and ten public CIMA histology landmark pairs.
 \end{enumerate}
 
-The manuscript deliberately leaves experimental values blank. No empirical result is asserted before computation.
 
 \section{Related Work}
 \subsection{ADMM parameter selection}
 The scaled ADMM iteration and practical residual stopping criteria were systematized by Boyd et al. \cite{Boyd2011}. Ghadimi et al. derived optimal penalties and relaxation parameters for several quadratic classes \cite{Ghadimi2015}. Teixeira et al. studied scaling, preconditioning, and optimal ADMM parameters in distributed quadratic programming \cite{Teixeira2016}. Giselsson and Boyd developed tight contraction bounds and metric selection for Douglas--Rachford splitting and ADMM under strong-convexity and smoothness assumptions \cite{GiselssonBoyd2017}. Adaptive alternatives include residual balancing and Barzilai--Borwein-type spectral updates \cite{Wohlberg2017,Xu2017}.
 
-Song et al. \cite{Song2024} is the closest work. It formulates ADMM/oADMM for general linear quadratic problems, optimizes the penalty from the iteration spectrum, and gives a closed-form relaxation parameter for fixed penalty. It includes diffeomorphic image registration as an application. The distinction sought here is not another full-spectrum objective: it is a registration-specific local envelope whose certified minimizer is obtained from finitely many algebraic candidates without gradient descent or repeated ADMM trials.
+Song et al. \cite{Song2024} is the closest work. It formulates ADMM/oADMM for general linear quadratic problems, optimizes the penalty from the iteration spectrum, and gives a closed-form relaxation parameter for fixed penalty. It includes diffeomorphic image registration as an application. The distinction sought here is not another full-spectrum objective: it is a registration-specific finite predictor obtained from four algebraic corners without gradient descent or repeated ADMM trials, accompanied by a separately evaluated signed certificate.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
-\caption{Adversarial comparison with the closest work.}
+\caption{Comparison with the closest general LQP method.}
 \begin{tabular}{p{0.22\linewidth}p{0.32\linewidth}p{0.36\linewidth}}
 \toprule
 Aspect & Song et al. (2024) & This study\\
 \midrule
 Problem class & General linear quadratic problems & Rank-one registration data term and scalar Sobolev regularizer\\
-Penalty & Numerical one-variable spectral optimization & Finite roots of a certified local envelope\\
+Penalty & Numerical one-variable spectral optimization & Finite four-corner predictor; no full spectrum\\
 Relaxation & Formula conditional on penalty & Finite piecewise-linear candidates conditional on penalty\\
-Variable coefficients & Full iteration spectrum & Local symbol plus noncommuting norm certificate\\
-Empirical conclusion & Imaging improvements reported & Controlled usefulness gate fails; no real-data claim\\
+Variable coefficients & Full iteration spectrum & Local predictor plus signed noncommuting enclosure\\
+Empirical conclusion & Imaging improvements reported & FIRE and CIMA matched-accuracy runtime reductions\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -268,6 +261,34 @@ Hence $\theta$ is coordinatewise monotone on every rectangle
 $[h^-,h^+]\times[g^-,g^+]$, and its minimum and maximum occur at the four corners. Since $|1-\alpha+\alpha\theta|$ is convex as a function of $\theta$, its maximum also occurs at a corner.
 \end{lemma}
 
+\begin{theorem}[Global four-corner reduction for rank-one registration]\label{thm:global_four}
+Let $H_i=\nu I+\mu q_iq_i^\top$ with $\mu,\nu\ge0$, and let the scalar
+regularizer spectrum be contained in $[g_-,g_+]\subset[0,\infty)$.  Put
+\[
+h_-=\nu,\qquad h_+=\nu+\mu\max_i\lVert q_i\rVert^2.
+\]
+For every $\rho>0$ and $0<\alpha\le2$, the envelope over every pixelwise
+rank-one curvature and every regularizer frequency is exactly
+\[
+ \max_{(h,g)\in\{h_-,h_+\}\times\{g_-,g_+\}}
+ \left|1-\alpha+\alpha\theta(h,g;\rho)\right|.
+\]
+Consequently, the finite joint constant-model predictor depends on exactly
+four branches, independent of image size and of the number of distinct
+gradient magnitudes.
+\end{theorem}
+\begin{proof}
+Every data eigenvalue is either $\nu$ or
+$\nu+\mu\lVert q_i\rVert^2$, hence belongs to $[h_-,h_+]$ and both data
+endpoints are attained (the lower endpoint is the direction orthogonal to
+$q_i$).  By Lemma~\ref{lem:corners}, $\theta$ maps the rectangle into the
+interval whose endpoints are attained at its corners.  The function
+$t\mapsto|1-\alpha+\alpha t|$ is convex, so its maximum over that interval is
+attained at an endpoint and therefore at one of the same four corners.
+This argument permits $h_-=0$, $g_-=0$, repeated endpoints, and common
+nullspaces because every denominator is strictly positive for $\rho>0$.
+\end{proof}
+
 Let
 \begin{equation}
 \mathcal C=\bigcup_{r,j}
@@ -281,10 +302,10 @@ U_{\mathrm{LFA}}(\rho,\alpha)
 |1-\alpha+\alpha\theta(h,g;\rho)|.
 \label{eq:finite_envelope}
 \end{equation}
-Thus the full local Fourier calculation reduces to a small finite set even in three dimensions.
+Thus the full local Fourier calculation reduces to a small finite set even in three dimensions.  For the global rank-one predictor, Theorem~\ref{thm:global_four} sharpens this set to four entries; patchwise sets remain useful only when deliberately constructing a local rather than global model.
 
-\section{Rigorous Variable-Coefficient Bound}
-The frozen model is useful only if it controls the full noncommuting iteration. Define
+\section{Legacy Global-Perturbation Baseline}
+For completeness, we retain the original frozen-patch perturbation certificate as a rigorous but deliberately conservative baseline. It replaces both $H$ and $G$ and is not used to select the practical predictor parameters. Define
 \begin{equation}
 \delta_H=\norm{H-\widetilde H}_2,
 \qquad
@@ -382,7 +403,27 @@ These bounds are never weaker than their block-row-sum counterparts.  They requi
 \end{theorem}
 For a block vector $x$, set $y_i=\norm{x_i}_2$.  Bounding each Hermitian quadratic cross term by $B^S_{ij}y_iy_j$ gives the two scalar Rayleigh quotients.  The same block-norm comparison gives $\norm{Qx}_2\le\norm{B^Qy}_2$, hence $\norm Q_2\le\norm{B^Q}_2=\spr(B^Q)$.  Standard eigenvalue bounds by maximum row sum prove dominance over the earlier rectangle.
 
-This motivates a two-stage method.  First, enumerate all pixelwise rank-one curvatures and use the exact constant-model finite candidates to predict $(\rho_p,\alpha_p)$.  Second, evaluate the comparison rectangle once at that pair.
+\begin{corollary}[Sparse truncated-kernel certificate]\label{cor:truncated_kernel}
+Assume periodic boundaries and write the scalar Cayley operator as convolution
+by $k_\rho$.  Retain offsets in a set $\mathcal R$ and define the omitted
+tail $\tau_\mathcal R=\sum_{s\notin\mathcal R}|k_\rho(s)|$.  Construct the
+comparison rectangle of Theorem~\ref{thm:comparison} from retained offsets
+only, giving $U_\mathcal R$.  Then
+\[
+ \spr(T_{\rho,\alpha})\le U_\mathcal R+
+ \frac{\alpha}{2}\max_i\norm{C_i}_2\,\tau_\mathcal R.
+\]
+For a fixed-radius stencil the comparison matrices are sparse, FFT evaluation
+of $k_\rho$ costs $O(n\log n)$, and extremal comparison eigenvalues can be
+estimated matrix-free.
+\end{corollary}
+Indeed, Young's convolution inequality gives
+$\norm{K_\rho-K_{\rho,\mathcal R}}_2\le\tau_\mathcal R$; multiplication by
+$C_H$ and the affine oADMM scaling give the displayed correction.  This
+certificate is rigorous for every truncation radius, including radius zero;
+tightness rather than validity determines whether it is actionable.
+
+This motivates a two-stage method.  First, extract $h_+$ and the two regularizer-symbol endpoints and use the four-corner finite candidates to predict $(\rho_p,\alpha_p)$.  Second, evaluate the comparison rectangle once at that pair.
 
 \begin{corollary}[Predict-then-certify]\label{cor:predict_certify}
 The prediction stage uses no full spectral optimization.  If its comparison bound satisfies $U_{\rm cmp}(\rho_p,\alpha_p)<1$, then the full variable-coefficient oADMM iteration converges linearly, irrespective of whether the pixel-curvature predictor itself is an enclosure.
@@ -394,7 +435,7 @@ This separation is important: a conservative certificate can validate a good pre
 \textbf{Algorithm 1: Search-Free Predict-then-Certify}
 \begin{enumerate}[leftmargin=1.8em]
 \item Compute the exact rank-one blocks $H_i$ and their distinct curvatures; combine them with the exact symbol endpoints of $G_0$.
-\item Enumerate the joint constant-model algebraic candidates and select $(\rho_p,\alpha_p)$ from the pixel-curvature predictor.
+\item Enumerate the joint constant-model algebraic candidates and select $(\rho_p,\alpha_p)$ from the four-corner predictor.
 \item At this single pair, compute $C_i$, $K_{\rho_p}$, $B^S$, $B^Q$, and the Perron comparison rectangle.
 \item Return $(\rho_p,\alpha_p,U_{\rm cmp})$ with status \texttt{CERTIFIED\_USEFUL} if $U_{\rm cmp}<1$ and no boundary collapse occurs; otherwise return \texttt{CERTIFIED\_CONSERVATIVE} or \texttt{UNCERTIFIABLE}.
 \end{enumerate}
@@ -412,7 +453,7 @@ and $[H,G]_{ij}=G_{ij}(H_i-H_j)$.  This proves that nonnormality is controlled b
 For the rank-one model, a block rotation $R_i$ aligned with $q_i$ diagonalizes $H_i$ exactly.  In the rotated coordinates the regularizer block is $G_{ij}R_i^\top R_j$; its departure from identity is $2|\sin((\phi_i-\phi_j)/2)|$.  The implementation therefore records neighborwise magnitude-squared variation and the acute unoriented-angle statistic $|\sin((\phi_i-\phi_j)/2)|$ (the sign of $q_i$ is immaterial to $q_iq_i^\top$).  These statistics diagnose the commutator regime without a global mean Hessian.
 
 \section{Search-Free Parameter Selection}
-We use ``search-free'' to mean that no grid search, gradient descent in $(\rho,\alpha)$, repeated ADMM trial, or repeated full iteration-matrix eigensolve is performed. The method extracts local curvature endpoints once, generates a finite algebraic candidate set, and evaluates the certified scalar envelope.
+We use ``search-free'' to mean that no grid search, gradient descent in $(\rho,\alpha)$, repeated ADMM trial, or repeated full iteration-matrix eigensolve is performed. The practical method extracts curvature and symbol endpoints once, generates a finite algebraic candidate set, and evaluates the constant-model predictor envelope; any certificate is evaluated separately at the selected pair.
 
 \subsection{Globally joint constant-gradient selector}
 For fixed $\rho$, let $a(\rho)=\min_c\theta_c(\rho)$ and $b(\rho)=\max_c\theta_c(\rho)$.  On $0<\alpha\le2$, exact minimization gives
@@ -422,7 +463,7 @@ For fixed $\rho$, let $a(\rho)=\min_c\theta_c(\rho)$ and $b(\rho)=\max_c\theta_c
 After eliminating $\alpha$, the objective is $(b-a)/(2-a-b)$ when $a+b\le1$, and $2b-1$ when $a+b\ge1$.
 
 \begin{theorem}[Exact search-free constant-gradient tuning]\label{thm:joint_constant}
-On a compact positive penalty interval, a globally optimal pair $(\rho,\alpha)$ is obtained by evaluating a finite algebraic set comprising interval endpoints, pairwise corner-branch intersections, roots of $a+b=1$, and stationary roots of the two rational objectives above for every ordered active-corner pair.  All equations become finite-degree polynomials after clearing positive denominators.
+On a compact positive penalty interval, a globally optimal pair $(\rho,\alpha)$ is obtained by evaluating a finite algebraic set comprising interval endpoints, pairwise corner-branch intersections, roots of $a+b=1$, and stationary roots of the two rational objectives above for every active-corner pair.  After clearing positive quadratic denominators, branch intersections have degree at most three, transitions degree at most four, and stationary equations degree at most six.
 \end{theorem}
 Between consecutive branch intersections, the active minimum and maximum are fixed rational functions.  A minimum of the continuous piecewise-rational reduced objective is therefore an endpoint, transition, or stationary root.  Enumerating all corner pairs is a finite superset and removes the need to determine activity symbolically.  The implementation verifies companion-matrix roots by polynomial residual and interval membership.
 
@@ -571,13 +612,27 @@ The patch-boundary discrepancy $\delta_G$ can be reduced using overlapping patch
 \subsection{Computational complexity}
 For rank-one data blocks, each patch contributes only two distinct data eigenvalues in 2D or two groups in 3D. Hence $|\mathcal C|=O(Rd)$, pairwise corner intersections cost $O(|\mathcal C|^2)$, and quartic roots cost $O(|\mathcal C|)$. This overhead is independent of the number of ADMM iterations and is typically negligible relative to a 3D registration solve. No full $2n\times2n$ or $3n\times3n$ iteration matrix is formed.
 
+\subsection{End-to-end two-dimensional solver}
+The reference implementation uses a three-level Gaussian pyramid, spatial image
+gradients, Gauss--Newton/optical-flow linearization, Sherman--Morrison solves of
+the rank-one data blocks, and FFT solves of the scalar Sobolev regularizer.
+Velocity increments are composed with the current displacement.  A backtracking
+line search requires objective decrease and a discrete Jacobian above 0.05.
+Because interpolation between pyramid levels can itself introduce grid-scale
+folds, the upsampled field is audited before the next update; if necessary only
+its non-translational component is halved until the same Jacobian floor holds.
+The one-shot policy estimates parameters from the initial gradient on the
+finest experimental grid and reuses them at every outer iteration and pyramid level.  All
+baselines share initialization, objective, stopping tolerances, line search,
+pyramid, and topology safeguards.
+
 \section{Reproducible Experiments and Results}
 All calculations used IEEE double precision, NumPy 2.2.6 and SciPy 1.15.3 with seed 20260806.  Raw JSON/CSV files, configurations, and generating scripts accompany the paper.  The progressive gates require median enclosure gap below 0.25, median selected-parameter spectral-radius gap below 0.10, and no systematic boundary collapse.  Small-system oracle values use direct eigendecomposition and multistart local optimization; this numerical optimization is diagnostic only.
 
 \subsection{Experiment 1: constant-coefficient verification}
 We used $n\times n$ periodic grids, data curvatures $(0.2,2.3)$, and first-order regularization with $(\beta,\gamma)=(0.2,0.1)$.  The finite selector returned $(\rho,\alpha)=(0.5435121024,1.8981520705)$ on every grid.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \caption{Constant-coefficient verification; times are single-process selection times.}
 \begin{tabular}{rccc}
@@ -594,7 +649,7 @@ $n$ & Direct radius & Envelope & Selection (ms)\\
 \subsection{Experiment 2: structured enclosures on controlled fields}
 We retained the earlier 18 cases spanning grid sizes 4/5, magnitude contrasts 1/4/16, and orientation windings 0/1/3.  Every structured certificate enclosed the exact radius.  Exact block-resolvent weighting reduced the median enclosure gap to 0.166 but collapsed in 6 cases.  Signed block disks and row-sum rectangles had no collapse; their median enclosure/parameter gaps were 0.644/0.560 and 0.602/0.431.  The comparison rectangle improved these to 0.595/0.386, also without collapse.  Sign preservation therefore fixes the pathological boundary behavior, while Perron comparison gives a further strict methodological improvement.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \caption{Controlled structured-envelope results (18 cases).}
 \begin{tabular}{lrrr}
@@ -609,48 +664,204 @@ Comparison rectangle & 0.595 & 0.386 & 0\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering\includegraphics[width=.72\linewidth]{../figures/structured_parameter_gaps.pdf}
 \caption{Parameter-quality distributions on the original stress set.  The dashed line is Gate~3.}
 \end{figure}
 
 \subsection{Experiment 3: separated variation regimes}
-We next isolated periodic magnitude variation, smooth orientation variation, a sharp orientation interface, and Gaussian-smoothed synthetic image gradients on $3\times3$ grids (ten cases, nine labeled smooth).  The finite predictor formed corners from every exact pixelwise rank-one curvature and the exact regularizer-symbol endpoints.  It achieved median parameter gaps 0.057 overall and 0.027 on smooth cases with zero collapse.  Predict-then-certify returned the same parameters and a rigorous comparison bound below one in all ten cases.  Its median relative certificate gap was 1.29, so it passes convergence, parameter-quality, and robustness gates but not the 0.25 tightness gate.  This is stronger than either ingredient alone: useful parameters are selected without search, and their full variable-coefficient convergence is certified.
+We next isolated periodic magnitude variation, smooth orientation variation, a sharp orientation interface, and Gaussian-smoothed synthetic image gradients on $3\times3$ grids (ten cases, nine labeled smooth).  The finite predictor used the exact rank-one curvature range and regularizer-symbol endpoints; Theorem~\ref{thm:global_four} now proves that only their four global corners are required.  It achieved median parameter gaps 0.057 overall and 0.027 on smooth cases with zero collapse.  Predict-then-certify returned the same parameters and a rigorous comparison bound below one in all ten cases.  Its median relative certificate gap was 1.29, so it passes convergence, parameter-quality, and robustness gates but not the 0.25 tightness gate.  This is stronger than either ingredient alone: useful parameters are selected without search, and their full variable-coefficient convergence is certified.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering\includegraphics[width=.72\linewidth]{../figures/smooth_parameter_gaps.pdf}
-\caption{Smooth-field parameter gaps.  Pixelwise curvature enumeration passes the 0.10 empirical quality gate; rigorous structured enclosures do not.}
+\caption{Smooth-field parameter gaps.  The four-corner predictor (exactly equivalent here to pixelwise enumeration) passes the 0.10 empirical quality gate; rigorous structured enclosures do not.}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering\includegraphics[width=.68\linewidth]{../figures/predict_then_certify.pdf}
 \caption{Predict-then-certify on nine smooth cases.  Every rigorous bound is below one, although conservatism remains visible.}
 \end{figure}
 
+\subsection{Truncated-certificate scaling}
+The rigorous truncated-kernel certificate had no violation in 20 tests spanning
+$8^2$--$64^2$ grids and five radii.  Actual matrix-free radii were approximately
+0.269, whereas bounds ranged from 0.638 to 0.681 (relative gaps 1.38--1.54).
+The most expensive $64^2$ retained-radius case took 81.4 seconds on CPU, and a
+relaxed $128^2$ Arnoldi/certificate run did not complete within the allocated
+diagnostic window.  Thus the construction establishes a scalable sparse
+representation in principle, but the present eigensolver and bound are not a
+practical registration-time certificate.  We retain it as a small-problem
+diagnostic and use the predictor alone in the end-to-end timing claim.
+
+\subsection{Pilot end-to-end registration on public real-image content}
+We next tested the implemented multiresolution solver on a public-domain retinal
+image and an unrestricted immunohistochemistry image, each subjected to three
+held-out smooth known deformations.  Deformation cases 1--2 selected one global
+manual baseline $(\rho,\alpha)=(0.1,1)$; cases 3--5 were not used for tuning.
+This is a controlled real-content pilot, not a FIRE or ANHIR landmark benchmark.
+Against that validation-selected baseline, a single predictor evaluation from
+the initial full-resolution gradient reduced the median inner-iteration count
+by 44.4\%.  Across five repeated, order-alternated timings (30 paired runs), the
+median total-time reduction was 41.7\% (bootstrap 95\% interval
+$[40.9,42.6]$\%), tuning consumed 1.58\% of proposed-method runtime, and the
+median relative MSE change was $-0.0068$\%.  No tested case had a nonpositive
+discrete Jacobian.  The experiment therefore passes the predeclared pilot
+iteration, runtime, accuracy, overhead, and folding gates, but its two images
+and controlled warps are insufficient for a clinical or benchmark claim.
+
+\begin{table}[ht]
+\centering
+\caption{Held-out public-image-content pilot; medians over paired runs.}
+\begin{tabular}{lrr}
+\toprule
+Metric & Full-resolution one-shot predictor & Gate\\
+\midrule
+Inner-iteration reduction & 44.4\% & $\ge15$\%\\
+Total-time reduction & 41.7\% & $\ge10$\%\\
+Relative MSE change & $-0.0068$\% & $\le1$\% degradation\\
+Selection overhead & 1.58\% & $<2$\%\\
+Nonpositive-Jacobian cases & 0/6 & 0\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{CIMA differently stained histology landmark benchmark}
+We then evaluated the public lung-lesion-3 sample distributed with the CIMA
+histology-landmark repository~\cite{Borovec2018}: five differently stained sections and all ten
+unordered image pairs.  Images supplied at 5\% scale were converted to a common
+structural channel (grayscale, CLAHE, Sobel magnitude, Gaussian smoothing, and
+fixed percentile normalization) and resized to $256^2$.  Manual landmarks
+provided at 50\% scale were rescaled geometrically and were used only for
+evaluation.  Every method used the same image-only robust translation
+initialization, selected from phase, centroid, and clustered SIFT proposals on
+a $128^2$ image.  A pyramid-transition safeguard damped only the
+non-translational displacement when interpolation threatened the discrete
+Jacobian floor.
+
+The proposed practical policy evaluated the four-corner selector once from the
+initial full-resolution gradient and reused its parameters through all levels.
+The strongest fixed baseline, $(\rho,\alpha)=(0.1,1)$, had been selected on the
+separate controlled real-content validation cases and was frozen before CIMA.
+Across five order-alternated repetitions of all ten pairs (50 paired runs), the
+predictor reduced median total runtime by 20.1\% (bootstrap 95\% interval
+19.4--20.7\%), solver time by 23.5\%, and iterations by 30.1\%.  Selection used
+1.16\% of proposed-method runtime.  Median TRE was 7.33 pixels, or 2.02\% of the
+image diagonal, and differed by less than $3\times10^{-5}$ pixels between the
+predictor and fixed baseline.  Median landmark-error improvement from the
+unregistered pairs was 36.5\%.  No global or interior nonpositive Jacobian was
+observed in the final protocol.  One difficult stain pair retained TRE above
+22 pixels, identifying global initialization and cross-stain representation as
+the principal failure mode rather than ADMM convergence.  Phase-only and
+unprotected pyramid runs on this same sample exposed the initialization and
+upsampling failures that motivated the final shared safeguards; those raw runs
+are preserved.  Consequently, the final CIMA estimate is a reproducible
+exploratory benchmark, not a held-out confirmatory dataset result.
+
+\begin{table}[ht]
+\centering
+\caption{CIMA landmark results; accuracy medians over ten pairs and timing over 50 paired runs.}
+\begin{tabular}{lrrr}
+\toprule
+Method & Iterations & Total time (s) & Median TRE (px)\\
+\midrule
+Fixed $(1,1)$ & 1910.5 & 12.09 & 7.3310\\
+Fixed $(1,1.8)$ & 1129.5 & 7.37 & 7.3308\\
+Residual balancing & 1124.5 & 7.40 & 7.3310\\
+BB adaptive proxy & 435.5 & 3.44 & 7.3306\\
+External fixed $(0.1,1)$ & 303.5 & 2.53 & 7.3306\\
+Four-corner, one shot & 210.0 & 2.02 & 7.3306\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+\centering\includegraphics[width=.92\linewidth]{../figures/cima_landmarks_runtime.pdf}
+\caption{CIMA pairwise landmark error and matched-protocol runtime.  The difficult high-TRE pair is retained rather than excluded.}
+\end{figure}
+
+For a Song-style diagnostic, we formed the exact variable-coefficient reduced
+operator on an $8\times8$ surrogate for every pair, optimized $\rho$
+numerically with exact conditional $\alpha$, and then reused the result in the
+full solve.  This required a median 97 spectral objective evaluations and
+2.18 seconds of tuning.  Its median full-solve iteration count was 251 versus
+210 for the four-corner predictor; total runtime was 4.39 versus 2.02 seconds,
+with indistinguishable TRE.  Because the spectral model is a coarse surrogate,
+this comparison demonstrates overhead and model-transfer behavior rather than
+claiming superiority to full-resolution Song optimization.
+
+\subsection{FIRE retinal landmark benchmark}
+We evaluated all 134 landmarked pairs in the public FIRE fundus registration
+benchmark~\cite{HernandezMatas2017}: 14 A, 49 P, and 71 S pairs.  The released
+archive was integrity-tested with \texttt{7z t}; images were converted to a
+foreground-percentile-normalized green channel and resized to $128^2$.
+Supplied control points were scaled geometrically and used only for evaluation.
+Both methods used the identical phase-correlation initialization, three-level
+pyramid, objective, stopping criteria, and one CPU BLAS/OMP thread.  The
+four-corner predictor was evaluated once from the initial $128^2$
+gradient and reused through the solve.  We compare it to the fixed external
+pair $(\rho,\alpha)=(0.1,1)$, rather than claiming that this is a FIRE-tuned
+best baseline.
+
+Across all pairs, predictor median iterations were 241.5 versus 415.5 for the
+fixed pair, a paired median reduction of 40.7\%.  Median total time was 1.176
+versus 1.687 seconds, a 33.6\% paired reduction (bootstrap 95\% interval
+32.5--34.7\%); tuning was 2.0\% of proposed total time.  Median TRE was
+2.85282 versus 2.85284 pixels, with a median paired difference of
+$-1.1\times10^{-5}$ pixels.  There were no failed subproblems or nonpositive
+Jacobian fields.  The time reduction was present in each FIRE group (32.8\%,
+30.5\%, and 35.8\% median reductions for A, P, and S).  These results establish
+the practical effect on a complete public retinal landmark benchmark, while the
+$128^2$ CPU protocol and the single external fixed comparator limit claims about
+clinical-resolution performance or superiority to every adaptive baseline.
+
+\begin{table}[ht]
+\centering
+\caption{FIRE, 134 pairs at $128^2$; paired methods and identical initialization.}
+\begin{tabular}{lrrr}
+\toprule
+Method & Iterations & Total time (s) & Median TRE (px)\\
+\midrule
+External fixed $(0.1,1)$ & 415.5 & 1.687 & 2.85284\\
+Four-corner, one shot & 241.5 & 1.176 & 2.85282\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering\includegraphics[width=.86\linewidth]{../figures/fire_paired_runtime.pdf}
+\caption{Complete FIRE paired comparison. Left: total-time reductions by benchmark group. Right: paired landmark-error differences; zero denotes equal median TRE. The predictor improves runtime in every group without a systematic TRE shift.}
+\end{figure}
+
 \subsection{Decision-gate consequence}
-The revised phase produces an exact constant-gradient theorem and a variable-coefficient method combining useful search-free parameters with a rigorous convergence certificate.  Certificate tightness and experiment scale still fail the threshold required for medical claims, so public-data and end-to-end runtime studies remain gated.
+The four-corner predictor passes the predeclared iteration, total-runtime,
+accuracy, overhead, noncollapse, and topology gates on the CIMA sample.  The
+certificate fails the practical cost/tightness gate and is therefore excluded
+from the timed method.  The CIMA result supports a positive numerical-method
+claim, and the complete FIRE experiment independently passes its iteration,
+runtime, accuracy, overhead, noncollapse, and topology gates.  Broader
+multi-resolution and adaptive-baseline comparisons remain necessary.
 
 \section{Discussion}
 \subsection{What is guaranteed}
 The constant-gradient joint optimum is contained in a finite algebraic candidate set.  For variable coefficients, the global perturbation, block-resolvent, block-Gershgorin, row-sum rectangle, and Perron comparison quantities are rigorous enclosures.  Predict-then-certify rigorously guarantees convergence whenever its returned bound is below one; this occurred in every regime case.  The predictor alone is not claimed to be an enclosure.
 
 \subsection{What is not claimed}
-Outside the constant-gradient setting, selected parameters are not claimed to minimize the exact full spectral radius.  The finite penalty candidates used with the signed enclosures are inherited from the local model and are not proved to minimize those enclosures globally.  Most importantly, the empirically successful pixel-curvature rule is predictive rather than rigorous when orientations vary.
+Outside the constant-gradient setting, selected parameters are not claimed to minimize the exact full spectral radius.  The finite penalty candidates used with the signed enclosures are inherited from the local model and are not proved to minimize those enclosures globally.  Most importantly, the empirically successful four-corner rule is predictive rather than rigorous when orientations vary.
 
 \subsection{Novelty after comparison with Song et al.}
-Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula.  Here the rank-one registration Hessian yields a fully joint finite constant-gradient selector and a variable-coefficient predict-then-certify rule without repeated full-spectrum optimization.  The latter simultaneously achieved near-oracle synthetic parameters and certified convergence, although comparison against Song et al. on registration runtime remains future work.
+Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula.  Here the rank-one registration Hessian yields a fully joint finite constant-gradient selector and a variable-coefficient predict-then-certify rule without repeated full-spectrum optimization.  On CIMA, an exact numerical optimizer on $8\times8$ variable-coefficient surrogates incurred more tuning cost and transferred less effectively than the four-corner rule.  Full-resolution Song optimization remains computationally out of scope, so the experiment is explicitly a coarse-surrogate diagnostic.
 
 \subsection{Limitations}
-Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$.  Experiments are small and synthetic, the diagnostic oracle is numerical, and no confidence interval or medical-registration metric is available.  A certificate below one proves convergence but its loose value does not predict the true rate accurately.  The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
+Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$.  Most exact spectral experiments remain small.  CIMA validation uses only one five-image tissue set at reduced resolution; one stain pair remains poorly aligned, and its bootstrap interval quantifies timing repeatability rather than population-level generalization.  FIRE uses a $128^2$ CPU protocol and one external fixed comparator, not a FIRE validation-tuned or complete adaptive-ADMM baseline.  The BB method is a safeguarded proxy rather than a complete published AADMM reproduction.  A certificate below one proves convergence but its loose value does not predict the true rate accurately.  The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
 
 \subsection{Extensions}
 Promising extensions include overlapping Schwarz-type local symbols, adaptive patch refinement driven by the certificate, multi-penalty ADMM with separate data and regularization metrics, and online reuse of local curvature summaries across pyramid levels. The envelope could also initialize a single safeguarded Newton correction without reverting to full gradient-based parameter search.
 
 \section{Data and Code Availability}
-The accompanying repository contains source code, tests, the fixed YAML configuration, environment specifications, raw JSON/CSV outputs, the research log, and exact reproduction commands.  No external patient data were used: the decision gate failed on generated fields, so downloading or processing a medical benchmark was neither necessary nor scientifically justified.  All synthetic fields are regenerated from the recorded seed.
+The accompanying repository contains source code, tests, predeclared configurations, environment specifications, raw JSON/CSV outputs, CIMA and FIRE preparation and evaluation scripts, public-sample and benchmark-download scripts, the research log, and exact reproduction commands.  The CIMA sample is obtained from the archived public histology-landmark repository at a recorded commit.  The locally acquired FIRE archive passed integrity validation; raw data remain excluded from version control.  ANHIR requires authenticated access.  No private patient data are redistributed.
 
 \section{Conclusion}
-The analysis delivers exact joint oADMM tuning for constant-gradient registration and a positive variable-coefficient methodology.  Pixelwise curvature enumeration selects near-oracle parameters without continuous search; a separate Perron comparison matrix then certifies the full noncommuting iteration.  Across ten regimes, every bound was below one, median parameter gap was 0.057 overall and 0.027 for smooth fields, and no selection collapsed.  The certificate remains too loose to predict the convergence factor accurately, and larger repeated studies are needed before registration claims.  The central methodological result is nevertheless stronger: conservatism no longer corrupts parameter selection, while rigor is retained as an explicit accept/reject certificate.
+The analysis delivers exact joint oADMM tuning for constant-gradient registration and a positive variable-coefficient methodology.  Four global corners replace pixelwise curvature enumeration exactly; a separate Perron or truncated-kernel comparison matrix can certify the full noncommuting iteration.  Across ten synthetic regimes, median parameter gap was 0.057 overall and 0.027 for smooth fields, with no collapse.  On all 134 FIRE landmark pairs, one-shot prediction reduced iterations by 40.7\% and total runtime by 33.6\% at unchanged TRE, 2.0\% tuning overhead, and zero folding; CIMA independently showed a 20.1\% matched-protocol speedup.  The certificate remains too loose and expensive for routine use.  The complete adaptive-baseline and clinical-resolution studies remain future work, but the tested results support a practical retinal and numerical-methods claim.
 
 \appendix
 \section{Proof of the Reduced Cayley Representation}\label{app:reduced}
@@ -746,6 +957,12 @@ S. Boyd, N. Parikh, E. Chu, B. Peleato, and J. Eckstein,
 ``Distributed optimization and statistical learning via the alternating direction method of multipliers,''
 \emph{Foundations and Trends in Machine Learning}, vol. 3, no. 1, pp. 1--122, 2011.
 
+\bibitem{Borovec2018}
+J. Borovec, A. Mu\~noz-Barrutia, and J. Kybic,
+``Benchmarking of image registration methods for differently stained histological slides,''
+in \emph{2018 IEEE International Conference on Image Processing}, pp. 3368--3372, 2018.
+DOI: 10.1109/ICIP.2018.8451040.
+
 \bibitem{ChanElman1989}
 T. F. Chan and H. C. Elman,
 ``Fourier analysis of iterative methods for elliptic problems,''
@@ -766,6 +983,12 @@ P. Giselsson and S. Boyd,
 A. Hering et al.,
 ``Learn2Reg: comprehensive multi-task medical image registration challenge, dataset and evaluation in the era of deep learning,''
 \emph{IEEE Transactions on Medical Imaging}, vol. 42, no. 3, pp. 697--712, 2023; preprint 2021.
+
+\bibitem{HernandezMatas2017}
+C. Hern\'andez-Matas, X. Zabulis, A. Triantafyllou, P. Anyfanti, S. Douma, and A. A. Argyros,
+``FIRE: Fundus Image Registration Dataset,''
+\emph{Journal for Modeling in Ophthalmology}, vol. 1, no. 4, pp. 16--28, 2017.
+DOI: 10.35119/maio.v1i4.42.
 
 \bibitem{Kumar2019}
 P. Kumar, C. Rodrigo, F. J. Gaspar, and C. W. Oosterlee,

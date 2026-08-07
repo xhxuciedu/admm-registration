@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.linalg import block_diag
 
-from src.candidate_roots import select_alpha, select_joint_constant, select_rho
-from src.local_envelope import certified_envelope, local_envelope, theta
+from src.candidate_roots import select_alpha, select_four_corner, select_joint_constant, select_rho
+from src.local_envelope import certified_envelope, global_four_corners, local_envelope, theta
 from src.spectral_tools import full_state_matrix, reduced_matrix, spectral_radius
 from src.admm_registration import solve_quadratic
 
@@ -75,3 +75,21 @@ def test_joint_constant_candidates_match_dense_2d_search():
         t=theta(corners[:,0],corners[:,1],r)
         dense=min(dense,float(np.min(np.max(np.abs(1-agrid[:,None]+agrid[:,None]*t),axis=1))))
     assert value <= dense+2e-5
+
+
+def test_four_corner_envelope_equals_all_pixel_curvatures():
+    rng=np.random.default_rng(20260806)
+    for _ in range(500):
+        h=np.r_[0.0,rng.lognormal(size=rng.integers(2,20))]
+        g=np.r_[0.0,rng.lognormal(size=rng.integers(2,20))]
+        all_corners=np.array([[a,b] for a in h for b in (g.min(),g.max())])
+        four=global_four_corners(h,g)
+        for rho,alpha in zip(rng.lognormal(size=3),rng.uniform(1e-4,2,size=3)):
+            np.testing.assert_allclose(local_envelope(all_corners,rho,alpha),local_envelope(four,rho,alpha),atol=2e-15)
+
+
+def test_four_corner_degenerate_and_nullspace_cases():
+    for h,g in (([0,0],[0,2]),([0,1],[0,0]),([1,1],[2,2]),([0,1e-14],[0,1e-12])):
+        rho,alpha,value,candidates=select_four_corner(h,g,(1e-8,10))
+        assert 1e-8<=rho<=10 and 0<alpha<=2 and np.isfinite(value)
+        assert len(candidates)>=2

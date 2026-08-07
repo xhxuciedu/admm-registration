@@ -35,9 +35,14 @@ intermediate/
 *.npz
 *.pkl
 *.pickle
+*.partial.csv
+results/**/*_part_*.csv
+results/**/certificate_scaling_8_64.csv
+data/raw/
+data/processed/
+data/downloads/
 
 # Local editor and OS metadata
 .DS_Store
 .idea/
 .vscode/
-

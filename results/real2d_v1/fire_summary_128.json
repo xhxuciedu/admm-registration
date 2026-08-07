@@ -1,0 +1,125 @@
+{
+  "protocol": {
+    "resolution": [
+      128,
+      128
+    ],
+    "pairs": 134,
+    "methods": [
+      "manual_external (rho=0.1, alpha=1)",
+      "four-corner predictor, pair-full reuse"
+    ],
+    "initialization": "phase correlation",
+    "threading": "one BLAS/OMP thread"
+  },
+  "overall": {
+    "pairs": 134,
+    "median_total_runtime_reduction": 0.33611773789300603,
+    "median_total_runtime_reduction_ci95": [
+      0.32519520898335663,
+      0.34695254473202053
+    ],
+    "median_solver_runtime_reduction": 0.33688418853548296,
+    "median_iteration_reduction": 0.4066674898135572,
+    "median_tre_difference_px": -1.0539644093254807e-05,
+    "tre_worse_pairs": 27,
+    "baseline_medians": {
+      "median_tre": 2.8528375627764633,
+      "inner_iterations": 415.5,
+      "solver_seconds": 1.684828134253621,
+      "total_seconds": 1.6870590094476938
+    },
+    "predictor_medians": {
+      "median_tre": 2.8528202410065697,
+      "inner_iterations": 241.5,
+      "solver_seconds": 1.1743021328002214,
+      "total_seconds": 1.1761685330420732
+    },
+    "predictor_tuning_fraction": 0.020035681646087686,
+    "nonpositive_jacobian_cases": 0,
+    "nonconverged_subproblem_cases": 0
+  },
+  "by_group": {
+    "A": {
+      "pairs": 14,
+      "median_total_runtime_reduction": 0.3280215245281739,
+      "median_total_runtime_reduction_ci95": [
+        0.30833825172401963,
+        0.3500487158852685
+      ],
+      "median_solver_runtime_reduction": 0.3288945578963902,
+      "median_iteration_reduction": 0.38969351181332745,
+      "median_tre_difference_px": -1.6997490164261109e-06,
+      "tre_worse_pairs": 2,
+      "baseline_medians": {
+        "median_tre": 1.6689292143027838,
+        "inner_iterations": 417.5,
+        "solver_seconds": 1.4356821030378342,
+        "total_seconds": 1.438010505400598
+      },
+      "predictor_medians": {
+        "median_tre": 1.668890623963846,
+        "inner_iterations": 250.5,
+        "solver_seconds": 0.963492383249104,
+        "total_seconds": 0.9658910166472197
+      },
+      "predictor_tuning_fraction": 0.03207903152697441,
+      "nonpositive_jacobian_cases": 0,
+      "nonconverged_subproblem_cases": 0
+    },
+    "P": {
+      "pairs": 49,
+      "median_total_runtime_reduction": 0.30475319830831304,
+      "median_total_runtime_reduction_ci95": [
+        0.269950475729974,
+        0.3241904940510121
+      ],
+      "median_solver_runtime_reduction": 0.3051970578658011,
+      "median_iteration_reduction": 0.36684782608695654,
+      "median_tre_difference_px": -1.9848543580280875e-05,
+      "tre_worse_pairs": 6,
+      "baseline_medians": {
+        "median_tre": 34.14008247779904,
+        "inner_iterations": 406.0,
+        "solver_seconds": 1.3948569241911173,
+        "total_seconds": 1.3970603700727224
+      },
+      "predictor_medians": {
+        "median_tre": 34.14008800530381,
+        "inner_iterations": 256.0,
+        "solver_seconds": 0.9909960217773914,
+        "total_seconds": 0.9932179357856512
+      },
+      "predictor_tuning_fraction": 0.03349506407253563,
+      "nonpositive_jacobian_cases": 0,
+      "nonconverged_subproblem_cases": 0
+    },
+    "S": {
+      "pairs": 71,
+      "median_total_runtime_reduction": 0.3579266280456679,
+      "median_total_runtime_reduction_ci95": [
+        0.34470055856893844,
+        0.3941986848693658
+      ],
+      "median_solver_runtime_reduction": 0.3583770116041406,
+      "median_iteration_reduction": 0.4272517321016166,
+      "median_tre_difference_px": -7.69563112124061e-06,
+      "tre_worse_pairs": 19,
+      "baseline_medians": {
+        "median_tre": 1.3552092544712395,
+        "inner_iterations": 418.0,
+        "solver_seconds": 4.112696344032884,
+        "total_seconds": 4.118701748549938
+      },
+      "predictor_medians": {
+        "median_tre": 1.3552970211016928,
+        "inner_iterations": 236.0,
+        "solver_seconds": 2.6367314867675304,
+        "total_seconds": 2.642992114648223
+      },
+      "predictor_tuning_fraction": 0.015081208061050674,
+      "nonpositive_jacobian_cases": 0,
+      "nonconverged_subproblem_cases": 0
+    }
+  }
+}

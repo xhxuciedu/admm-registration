@@ -26,6 +26,15 @@ def certified_envelope(corners, rho, alpha=1.0, delta_h=0.0, delta_g=0.0):
     return local_envelope(corners, rho, alpha) + alpha * (delta_h + delta_g) / rho
 
 
+def global_four_corners(h_values, g_values):
+    """Canonical four corners for nonnegative scalar data/regularizer spectra."""
+    h=np.asarray(h_values,float);g=np.asarray(g_values,float)
+    if h.size==0 or g.size==0 or np.any(h<0) or np.any(g<0):
+        raise ValueError('curvatures must be nonempty and nonnegative')
+    return np.array([[h.min(),g.min()],[h.min(),g.max()],
+                     [h.max(),g.min()],[h.max(),g.max()]])
+
+
 def refined_certificate(corners, rho, alpha, delta_h, delta_g, h_min=0.0, g_min=0.0):
     """Resolvent-denominator refinement proved by the same Cayley identity."""
     correction = alpha * (
@@ -33,4 +42,3 @@ def refined_certificate(corners, rho, alpha, delta_h, delta_g, h_min=0.0, g_min=
         + rho * delta_g / ((g_min + rho) ** 2)
     )
     return local_envelope(corners, rho, alpha) + correction
-

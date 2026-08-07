@@ -1,0 +1,27 @@
+study_id: real2d_v1
+seed: 20260806
+rho_interval: [0.0001, 1000.0]
+alpha_interval: [0.000001, 2.0]
+inner_atol: 1.0e-6
+inner_rtol: 1.0e-5
+max_inner_iterations: 500
+max_outer_iterations: 12
+pyramid_factors: [4, 2, 1]
+regularization_beta: 0.2
+regularization_gamma: 0.05
+primary_success_criteria:
+  median_inner_iteration_reduction_vs_fixed: 0.15
+  median_total_runtime_reduction_vs_best_practical: 0.10
+  maximum_accuracy_degradation_fraction: 0.01
+  predictor_overhead_fraction: 0.02
+  median_oracle_iteration_inflation: 1.10
+  maximum_collapse_rate: 0.0
+synthetic:
+  grid_sizes: [8, 16, 32, 64, 128]
+  seeds_per_major_regime: 50
+  exact_dense_max_grid: 16
+  arnoldi_tolerance: 1.0e-9
+timing:
+  warmups: 2
+  repetitions: 5
+
