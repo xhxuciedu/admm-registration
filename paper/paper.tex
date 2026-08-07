@@ -2,6 +2,8 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm,mathtools,bm}
 \usepackage{booktabs,array,multirow}
+\usepackage{caption}
+\usepackage{float}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{microtype}
@@ -12,6 +14,7 @@
 \usepackage{cleveref}
 
 \hypersetup{colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black}
+\captionsetup{font=small,labelfont=bf}
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{Search-Free ADMM for Diffeomorphic Registration}
@@ -47,7 +50,23 @@
 \maketitle
 
 \begin{abstract}
-We derive and validate a registration-specific, search-free selector for ADMM and over-relaxed ADMM (oADMM).  The exact reduced operator is $(1-\alpha/2)I+(\alpha/2)C_HC_G$.  For rank-one registration Hessians and a scalar transform-diagonalizable Sobolev regularizer, we prove that the global constant-model predictor needs exactly four curvature-symbol corners and that its joint optimum lies in a finite algebraic candidate set.  For variable coefficients we retain the exact regularizer and derive block-disk, commutator, Perron-comparison, and truncated-kernel enclosures; prediction and certification are deliberately separated.  The four-corner implementation matched pixelwise enumeration in 10,000 randomized configurations and took about 24 ms after endpoint extraction.  Smooth synthetic cases retained a median spectral-radius gap of 0.027 to numerical optimization.  On 134 landmarked pairs from the public FIRE retinal benchmark at $128^2$, one-shot prediction reduced median ADMM iterations by 40.7\% and total runtime by 33.6\% (bootstrap 95\% interval 32.5--34.7\%) versus a fixed external pair, with 2.0\% tuning overhead, indistinguishable landmark error, and no nonpositive Jacobians.  On ten CIMA histology pairs, it similarly reduced total runtime by 20.1\%.  Certification remained rigorous through $64^2$ but too conservative and expensive for routine use.
+We present a search-free parameter predictor for ADMM and over-relaxed ADMM in
+diffeomorphic image registration.  The method exploits an exact reduced Cayley
+representation: for rank-one pixelwise data Hessians and a scalar Sobolev
+regularizer, the constant-model tuning problem reduces exactly to four
+curvature--symbol corners and a finite algebraic candidate set.  Spatially
+varying gradients make the iteration nonnormal.  We therefore keep prediction
+and certification separate: signed block, commutator, Perron-comparison, and
+truncated-kernel enclosures audit a selected pair without distorting it toward a
+conservative boundary solution.  The four-corner implementation matched
+pixelwise enumeration in 10,000 randomized configurations; on smooth synthetic
+fields its median spectral-radius gap to numerical optimization was 0.027.  On
+134 landmarked FIRE retinal pairs at $128^2$, one-shot prediction reduced median
+ADMM iterations by 40.7\% and paired total runtime by 33.6\% (95\% bootstrap
+interval 32.5--34.7\%) versus a fixed external pair, with indistinguishable
+landmark error and no nonpositive Jacobians.  On ten CIMA histology pairs it
+reduced matched-protocol runtime by 20.1\%.  The present certificate is rigorous
+but too conservative for routine registration-time selection.
 \end{abstract}
 
 \section{Introduction}
@@ -627,27 +646,53 @@ baselines share initialization, objective, stopping tolerances, line search,
 pyramid, and topology safeguards.
 
 \section{Reproducible Experiments and Results}
-All calculations used IEEE double precision, NumPy 2.2.6 and SciPy 1.15.3 with seed 20260806.  Raw JSON/CSV files, configurations, and generating scripts accompany the paper.  The progressive gates require median enclosure gap below 0.25, median selected-parameter spectral-radius gap below 0.10, and no systematic boundary collapse.  Small-system oracle values use direct eigendecomposition and multistart local optimization; this numerical optimization is diagnostic only.
+The experiments follow the logic of the method rather than a catalogue of
+implementations.  We first verify the exact algebra where a full spectrum is
+available.  We then ask what changes when gradients vary: the original global
+certificate is a useful negative control, the signed local constructions repair
+its qualitative failure, and the predictor--certificate split explains what can
+and cannot be claimed.  Only after these checks do we test whether the selected
+parameters improve an actual registration solve.
 
-\subsection{Experiment 1: constant-coefficient verification}
+All calculations used IEEE double precision, NumPy 2.2.6 and SciPy 1.15.3 with
+seed 20260806.  Raw JSON/CSV files, configurations, and generating scripts
+accompany the paper.  The predeclared gates require median parameter gap below
+0.10, no systematic boundary collapse, no loss of registration accuracy, and
+runtime savings after tuning cost.  Small-system oracle values use direct
+eigendecomposition and multistart scalar optimization; this numerical
+optimization is diagnostic only.
+
+\subsection{Exactness and four-corner reduction}
 We used $n\times n$ periodic grids, data curvatures $(0.2,2.3)$, and first-order regularization with $(\beta,\gamma)=(0.2,0.1)$.  The finite selector returned $(\rho,\alpha)=(0.5435121024,1.8981520705)$ on every grid.
 
 \begin{table}[ht]
 \centering
-\caption{Constant-coefficient verification; times are single-process selection times.}
+\caption{Constant-coefficient verification; the local envelope agrees with the direct radius to machine precision.}
 \begin{tabular}{rccc}
 \toprule
-$n$ & Direct radius & Envelope & Selection (ms)\\
+$n$ & Direct radius & $|U_{\rm LFA}-\rho(T)|$ & Selection (ms)\\
 \midrule
-4 & 0.3531304388434793 & 0.3531304388434793 & 5.0\\
-6 & 0.3531304388434803 & 0.3531304388434793 & 4.6\\
-8 & 0.3531304388434788 & 0.3531304388434793 & 4.6\\
+4 & 0.35313044 & $<10^{-15}$ & 5.0\\
+6 & 0.35313044 & $<10^{-15}$ & 4.6\\
+8 & 0.35313044 & $<10^{-15}$ & 4.6\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Experiment 2: structured enclosures on controlled fields}
-We retained the earlier 18 cases spanning grid sizes 4/5, magnitude contrasts 1/4/16, and orientation windings 0/1/3.  Every structured certificate enclosed the exact radius.  Exact block-resolvent weighting reduced the median enclosure gap to 0.166 but collapsed in 6 cases.  Signed block disks and row-sum rectangles had no collapse; their median enclosure/parameter gaps were 0.644/0.560 and 0.602/0.431.  The comparison rectangle improved these to 0.595/0.386, also without collapse.  Sign preservation therefore fixes the pathological boundary behavior, while Perron comparison gives a further strict methodological improvement.
+\subsection{What the first certificate gets wrong}
+The first idea was to minimize the global additive perturbation certificate.
+It is rigorous, but it confuses parameter prediction with worst-case
+certification: on the 18 controlled fields (grid sides 4/5, magnitude contrasts
+1/4/16, orientation windings 0/1/3), its block-resolvent variant collapsed to a
+near-zero relaxation in 6 cases.  This is not an acceptable tuning rule.
+
+The signed constructions isolate the part of the spectrum that the norm bound
+erases.  Every block-Gershgorin, commutator, and Perron-comparison enclosure
+contained the exact radius; none collapsed.  The Perron rectangle was the
+strongest signed certificate (median enclosure/parameter gaps 0.595/0.386),
+but it is still too loose to be a practical objective.  This negative result
+motivates the final design: select with the exact four-corner model and use the
+certificate only to audit that selection.
 
 \begin{table}[ht]
 \centering
@@ -664,22 +709,20 @@ Comparison rectangle & 0.595 & 0.386 & 0\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[ht]
-\centering\includegraphics[width=.72\linewidth]{../figures/structured_parameter_gaps.pdf}
-\caption{Parameter-quality distributions on the original stress set.  The dashed line is Gate~3.}
-\end{figure}
+\subsection{Predict first; certify second}
+We next separated periodic magnitude variation, smooth orientation variation, a
+sharp orientation interface, and Gaussian-smoothed image gradients on $3\times3$
+grids (ten cases, nine smooth).  The four-corner predictor achieved a median
+parameter gap of 0.057 overall and 0.027 on the smooth cases, with no collapse.
+At exactly those selected parameters, predict--then--certify returned a rigorous
+comparison bound below one in all ten cases.  Its median relative certificate
+gap was 1.29: useful as a convergence audit, not as a rate estimate.  The
+experiment therefore supports the intended division of labor, not a claim that
+the certificate itself is tight.
 
-\subsection{Experiment 3: separated variation regimes}
-We next isolated periodic magnitude variation, smooth orientation variation, a sharp orientation interface, and Gaussian-smoothed synthetic image gradients on $3\times3$ grids (ten cases, nine labeled smooth).  The finite predictor used the exact rank-one curvature range and regularizer-symbol endpoints; Theorem~\ref{thm:global_four} now proves that only their four global corners are required.  It achieved median parameter gaps 0.057 overall and 0.027 on smooth cases with zero collapse.  Predict-then-certify returned the same parameters and a rigorous comparison bound below one in all ten cases.  Its median relative certificate gap was 1.29, so it passes convergence, parameter-quality, and robustness gates but not the 0.25 tightness gate.  This is stronger than either ingredient alone: useful parameters are selected without search, and their full variable-coefficient convergence is certified.
-
-\begin{figure}[ht]
-\centering\includegraphics[width=.72\linewidth]{../figures/smooth_parameter_gaps.pdf}
-\caption{Smooth-field parameter gaps.  The four-corner predictor (exactly equivalent here to pixelwise enumeration) passes the 0.10 empirical quality gate; rigorous structured enclosures do not.}
-\end{figure}
-
-\begin{figure}[ht]
-\centering\includegraphics[width=.68\linewidth]{../figures/predict_then_certify.pdf}
-\caption{Predict-then-certify on nine smooth cases.  Every rigorous bound is below one, although conservatism remains visible.}
+\begin{figure}[t]
+\centering\includegraphics[width=.98\linewidth]{../figures/algebraic_validation.pdf}
+\caption{Evidence for the two-stage method. \textbf{Left:} the frozen Fourier envelope is exact in constant-coefficient periodic systems. \textbf{Middle:} the four-corner predictor is within the predeclared 0.10 quality gate in median, particularly for smooth fields. \textbf{Right:} the signed certificate is rigorous but conservative; it validates convergence without being used to choose the parameters.}
 \end{figure}
 
 \subsection{Truncated-certificate scaling}
@@ -693,7 +736,7 @@ representation in principle, but the present eigensolver and bound are not a
 practical registration-time certificate.  We retain it as a small-problem
 diagnostic and use the predictor alone in the end-to-end timing claim.
 
-\subsection{Pilot end-to-end registration on public real-image content}
+\subsection{Controlled real-image check}
 We next tested the implemented multiresolution solver on a public-domain retinal
 image and an unrestricted immunohistochemistry image, each subjected to three
 held-out smooth known deformations.  Deformation cases 1--2 selected one global
@@ -774,11 +817,6 @@ Four-corner, one shot & 210.0 & 2.02 & 7.3306\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[ht]
-\centering\includegraphics[width=.92\linewidth]{../figures/cima_landmarks_runtime.pdf}
-\caption{CIMA pairwise landmark error and matched-protocol runtime.  The difficult high-TRE pair is retained rather than excluded.}
-\end{figure}
-
 For a Song-style diagnostic, we formed the exact variable-coefficient reduced
 operator on an $8\times8$ surrogate for every pair, optimized $\rho$
 numerically with exact conditional $\alpha$, and then reused the result in the
@@ -827,9 +865,9 @@ Four-corner, one shot & 241.5 & 1.176 & 2.85282\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering\includegraphics[width=.86\linewidth]{../figures/fire_paired_runtime.pdf}
-\caption{Complete FIRE paired comparison. Left: total-time reductions by benchmark group. Right: paired landmark-error differences; zero denotes equal median TRE. The predictor improves runtime in every group without a systematic TRE shift.}
+\begin{figure}[H]
+\centering\includegraphics[width=.98\linewidth]{../figures/registration_results.pdf}
+\caption{End-to-end evidence. \textbf{Top:} CIMA accuracy is retained while the four-corner rule is the fastest tested configuration. \textbf{Bottom:} on all 134 FIRE pairs, the predictor reduces total time in every subgroup without a systematic landmark-error shift. The difficult CIMA pair is retained.}
 \end{figure}
 
 \subsection{Decision-gate consequence}
@@ -861,7 +899,19 @@ Promising extensions include overlapping Schwarz-type local symbols, adaptive pa
 The accompanying repository contains source code, tests, predeclared configurations, environment specifications, raw JSON/CSV outputs, CIMA and FIRE preparation and evaluation scripts, public-sample and benchmark-download scripts, the research log, and exact reproduction commands.  The CIMA sample is obtained from the archived public histology-landmark repository at a recorded commit.  The locally acquired FIRE archive passed integrity validation; raw data remain excluded from version control.  ANHIR requires authenticated access.  No private patient data are redistributed.
 
 \section{Conclusion}
-The analysis delivers exact joint oADMM tuning for constant-gradient registration and a positive variable-coefficient methodology.  Four global corners replace pixelwise curvature enumeration exactly; a separate Perron or truncated-kernel comparison matrix can certify the full noncommuting iteration.  Across ten synthetic regimes, median parameter gap was 0.057 overall and 0.027 for smooth fields, with no collapse.  On all 134 FIRE landmark pairs, one-shot prediction reduced iterations by 40.7\% and total runtime by 33.6\% at unchanged TRE, 2.0\% tuning overhead, and zero folding; CIMA independently showed a 20.1\% matched-protocol speedup.  The certificate remains too loose and expensive for routine use.  The complete adaptive-baseline and clinical-resolution studies remain future work, but the tested results support a practical retinal and numerical-methods claim.
+The central lesson is that prediction and certification should not be asked to
+do the same job.  Four global corners replace pixelwise curvature enumeration
+exactly in the constant model, yielding finite joint oADMM tuning without
+spectral search.  For variable coefficients, signed comparison constructions
+retain a rigorous convergence audit, but their present tightness does not justify
+using them as the tuning objective.  This division is borne out empirically:
+the predictor has median parameter gap 0.057 across the synthetic regimes
+(0.027 on smooth fields), reduces iterations by 40.7\% and total runtime by
+33.6\% on all 134 FIRE pairs at unchanged TRE, and reduces matched-protocol
+runtime by 20.1\% on CIMA.  The claim is deliberately limited to the tested
+CPU resolution, model, and comparators.  Completing full adaptive-baseline and
+clinical-resolution studies is the natural next step; it does not alter the
+exact four-corner result or the demonstrated search-free practical benefit.
 
 \appendix
 \section{Proof of the Reduced Cayley Representation}\label{app:reduced}
