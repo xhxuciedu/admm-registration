@@ -1,0 +1,3 @@
+pair_index,pair,fixed,moving,group,landmarks,method,initialization_seconds,solver_seconds,total_seconds,tuning_seconds,inner_iterations,failed_subproblems,accepted_steps,subproblems,min_jacobian,nonpositive_jacobian_fraction,rho_initial,alpha_initial,rho_final,alpha_final,h_minus,h_plus,g_minus,g_plus,prepared_size,reuse_policy,initial_tre,median_tre,mean_tre,p95_tre,median_rtre,landmark_improvement
+92.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0.0,manual_external,0.004090890288352966,3.0679139085114002,3.072004798799753,1.6374513506889343e-05,250.0,0.0,11.0,13.0,0.0542230288592273,0.0,0.1,1.0,0.1,1.0,0.0,0.293010413646698,0.05,1.65,256.0,fixed,100.54542640194416,100.72233955959672,99.9497486812788,104.0131017487904,0.2782087864045504,-0.0017595346102003,,,,,

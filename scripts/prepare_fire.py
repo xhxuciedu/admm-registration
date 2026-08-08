@@ -39,13 +39,16 @@ def representation(rgb: np.ndarray) -> np.ndarray:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--size", type=int, default=256)
+    parser.add_argument("--output", type=Path, default=OUT,
+                        help="Prepared-data directory (keeps resolutions separate).")
     parser.add_argument("--image-start", type=int, default=0)
     parser.add_argument("--image-count", type=int, default=None)
     parser.add_argument("--landmarks-only", action="store_true")
     args = parser.parse_args()
+    output = args.output
     if not (SOURCE / "Images").is_dir():
         raise FileNotFoundError(f"FIRE not extracted at {SOURCE}")
-    OUT.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True)
     image_paths = sorted((SOURCE / "Images").glob("*.jpg"))
     selected = image_paths[args.image_start:]
     if args.image_count is not None:
@@ -59,7 +62,7 @@ def main() -> None:
             resized = source_image.resize((args.size, args.size), Image.Resampling.LANCZOS)
             rgb = np.asarray(resized)
         prepared = representation(rgb).astype(np.float32)
-        np.save(OUT / f"{path.stem}.npy", prepared)
+        np.save(output / f"{path.stem}.npy", prepared)
         metadata.append({"name": path.stem, "source_shape": [h, w],
                          "prepared_shape": [args.size, args.size],
                          "scale_xy": [args.size / w, args.size / h]})
@@ -87,17 +90,17 @@ def main() -> None:
         h2, w2 = source_shapes[name2]
         p1 *= args.size / np.array([w1, h1])
         p2 *= args.size / np.array([w2, h2])
-        np.savez(OUT / f"control_points_{stem}.npz", fixed=p1, moving=p2)
+        np.savez(output / f"control_points_{stem}.npz", fixed=p1, moving=p2)
         pairs.append({"pair": stem, "fixed": name1, "moving": name2,
                       "group": stem[0], "landmarks": int(len(p1))})
-    (OUT / "metadata.json").write_text(json.dumps({
+    (output / "metadata.json").write_text(json.dumps({
         "source": "FIRE archive extracted from data/downloads/FIRE.7z",
         "prepared_size": args.size,
         "preprocessing": "green channel and foreground percentile normalization",
         "landmark_convention": "x1,y1,x2,y2; fixed image is *_1 and moving image is *_2",
         "images": metadata, "pairs": pairs,
     }, indent=2) + "\n")
-    print(json.dumps({"images": len(metadata), "pairs": len(pairs), "output": str(OUT)}, indent=2))
+    print(json.dumps({"images": len(metadata), "pairs": len(pairs), "output": str(output)}, indent=2))
 
 
 if __name__ == "__main__":

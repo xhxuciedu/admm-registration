@@ -42,7 +42,7 @@
 \newcommand{\clip}{\operatorname{clip}}
 \newcommand{\cay}[2]{\mathcal{C}_{#1}(#2)}
 
-\title{\textbf{Signed Local Spectral Envelopes for Search-Free ADMM Tuning in Diffeomorphic Image Registration}}
+\title{\textbf{Four-Corner Spectral Tuning for Search-Free ADMM in Diffeomorphic Image Registration}}
 \author{Anonymous Authors}
 \date{August 2026}
 
@@ -61,9 +61,10 @@ truncated-kernel enclosures audit a selected pair without distorting it toward a
 conservative boundary solution.  The four-corner implementation matched
 pixelwise enumeration in 10,000 randomized configurations; on smooth synthetic
 fields its median spectral-radius gap to numerical optimization was 0.027.  On
-134 landmarked FIRE retinal pairs at $128^2$, one-shot prediction reduced median
-ADMM iterations by 40.7\% and paired total runtime by 33.6\% (95\% bootstrap
-interval 32.5--34.7\%) versus a fixed external pair, with indistinguishable
+134 landmarked FIRE retinal pairs at $256^2$, one-shot prediction reduced median
+ADMM iterations by 39.6\% and paired total runtime by 34.4\% (95\% bootstrap
+interval 30.7--35.7\%) versus an externally validation-selected fixed pair; it
+was also 51.7\% faster than a safeguarded BB proxy, with indistinguishable
 landmark error and no nonpositive Jacobians.  On ten CIMA histology pairs it
 reduced matched-protocol runtime by 20.1\%.  The present certificate is rigorous
 but too conservative for routine registration-time selection.
@@ -831,43 +832,44 @@ claiming superiority to full-resolution Song optimization.
 We evaluated all 134 landmarked pairs in the public FIRE fundus registration
 benchmark~\cite{HernandezMatas2017}: 14 A, 49 P, and 71 S pairs.  The released
 archive was integrity-tested with \texttt{7z t}; images were converted to a
-foreground-percentile-normalized green channel and resized to $128^2$.
+foreground-percentile-normalized green channel and resized to $256^2$.
 Supplied control points were scaled geometrically and used only for evaluation.
 Both methods used the identical phase-correlation initialization, three-level
 pyramid, objective, stopping criteria, and one CPU BLAS/OMP thread.  The
-four-corner predictor was evaluated once from the initial $128^2$
+four-corner predictor was evaluated once from the initial $256^2$
 gradient and reused through the solve.  We compare it to the fixed external
 pair $(\rho,\alpha)=(0.1,1)$, rather than claiming that this is a FIRE-tuned
 best baseline.
 
-Across all pairs, predictor median iterations were 241.5 versus 415.5 for the
-fixed pair, a paired median reduction of 40.7\%.  Median total time was 1.176
-versus 1.687 seconds, a 33.6\% paired reduction (bootstrap 95\% interval
-32.5--34.7\%); tuning was 2.0\% of proposed total time.  Median TRE was
-2.85282 versus 2.85284 pixels, with a median paired difference of
-$-1.1\times10^{-5}$ pixels.  There were no failed subproblems or nonpositive
-Jacobian fields.  The time reduction was present in each FIRE group (32.8\%,
-30.5\%, and 35.8\% median reductions for A, P, and S).  These results establish
-the practical effect on a complete public retinal landmark benchmark, while the
-$128^2$ CPU protocol and the single external fixed comparator limit claims about
-clinical-resolution performance or superiority to every adaptive baseline.
+Across all pairs, predictor median iterations were 245 versus 412 for the fixed
+pair, a paired median reduction of 39.6\%. Median total time was 4.774 versus
+6.680 seconds, a 34.4\% paired reduction (bootstrap 95\% interval 30.7--35.7\%);
+tuning was 1.2\% of proposed total time. The BB proxy required 623.5 median
+iterations and 9.435 seconds; the predictor was faster on 94.0\% of pairs, with
+a median 51.7\% paired reduction. Median TRE differed from the fixed pair by
+$-1.4\times10^{-5}$ pixels (maximum absolute difference $3.9\times10^{-4}$),
+and no method produced a nonpositive Jacobian. Per-level retuning reduced
+iterations on an 18-pair balanced ablation (222 versus 243), but its tuning cost
+made it slower overall (3.895 versus 2.651 seconds); one-shot reuse is therefore
+the recommended policy.
 
 \begin{table}[ht]
 \centering
-\caption{FIRE, 134 pairs at $128^2$; paired methods and identical initialization.}
+\caption{FIRE, 134 pairs at $256^2$; identical initialization and solver protocol.}
 \begin{tabular}{lrrr}
 \toprule
 Method & Iterations & Total time (s) & Median TRE (px)\\
 \midrule
-External fixed $(0.1,1)$ & 415.5 & 1.687 & 2.85284\\
-Four-corner, one shot & 241.5 & 1.176 & 2.85282\\
+External fixed $(0.1,1)$ & 412.0 & 6.680 & 5.50178\\
+BB adaptive proxy & 623.5 & 9.435 & 5.50175\\
+Four-corner, one shot & 245.0 & 4.774 & 5.50177\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[H]
-\centering\includegraphics[width=.98\linewidth]{../figures/registration_results.pdf}
-\caption{End-to-end evidence. \textbf{Top:} CIMA accuracy is retained while the four-corner rule is the fastest tested configuration. \textbf{Bottom:} on all 134 FIRE pairs, the predictor reduces total time in every subgroup without a systematic landmark-error shift. The difficult CIMA pair is retained.}
+\centering\includegraphics[width=.98\linewidth]{../figures/fire256_headline.pdf}
+\caption{FIRE 256 paired analysis against the strongest practical baseline (the externally validation-selected fixed pair). Runtime and iteration improvements remain positive across groups; TRE changes are numerically negligible, and the predicted penalties vary by pair.}
 \end{figure}
 
 \subsection{Decision-gate consequence}
@@ -906,8 +908,8 @@ spectral search.  For variable coefficients, signed comparison constructions
 retain a rigorous convergence audit, but their present tightness does not justify
 using them as the tuning objective.  This division is borne out empirically:
 the predictor has median parameter gap 0.057 across the synthetic regimes
-(0.027 on smooth fields), reduces iterations by 40.7\% and total runtime by
-33.6\% on all 134 FIRE pairs at unchanged TRE, and reduces matched-protocol
+(0.027 on smooth fields), reduces iterations by 39.6\% and total runtime by
+34.4\% on all 134 FIRE $256^2$ pairs at unchanged TRE, and reduces matched-protocol
 runtime by 20.1\% on CIMA.  The claim is deliberately limited to the tested
 CPU resolution, model, and comparators.  Completing full adaptive-baseline and
 clinical-resolution studies is the natural next step; it does not alter the
