@@ -31,8 +31,27 @@ def main_tex() -> str:
     # rather than a source that depends on a generated fragment.
     table = (ROOT / "paper" / "generated" / "fire256_table.tex").read_text().strip()
     body = body.replace("\\input{generated/fire256_table.tex}", table)
-    preamble = r"""\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+    # The source manuscript is maintained in one-column article form. JMIV's
+    # requested iicol template requires wide scientific tables/figures to use
+    # double-column floats; this packaging transform preserves their contents
+    # while making them readable at final submission width.
+    body = body.replace("\\begin{table}[", "\\begin{table*}[")
+    body = body.replace("\\end{table}", "\\end{table*}")
+    body = body.replace("\\begin{figure}[H]", "\\begin{figure*}[t]")
+    body = body.replace("\\begin{figure}[t]", "\\begin{figure*}[t]")
+    body = body.replace("\\end{figure}", "\\end{figure*}")
+    body = body.replace("width=.98\\linewidth", "width=.98\\textwidth")
+    body = body.replace("p{0.27\\linewidth}", "p{0.27\\textwidth}")
+    # Certification is secondary in the JMIV article. Setting its dense
+    # derivational material in the class's small text size improves two-column
+    # readability while preserving every displayed result.
+    body = body.replace("\\section{Optional Variable-Coefficient Rate Certification}",
+                        "\\section{Optional Variable-Coefficient Rate Certification}\n\\begingroup\\small")
+    body = body.replace("\\section{Finite Four-Corner Parameter Selection}",
+                        "\\endgroup\n\\section{Finite Four-Corner Parameter Selection}")
+    preamble = r"""\documentclass[pdflatex,iicol,sn-mathphys-num]{sn-jnl}
 \usepackage{amsmath,amssymb,amsthm,mathtools,bm,booktabs,array,multirow,float,graphicx,xcolor,microtype,hyperref,enumitem,url,cleveref}
+\setlength{\tabcolsep}{3pt}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proposition}[theorem]{Proposition}\newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}\newtheorem{assumption}[theorem]{Assumption}
@@ -72,7 +91,7 @@ On all 134 FIRE pairs at 256 by 256, the one-shot predictor reduced median pairw
 
 The work fits JMIV through its combination of operator-splitting analysis, variational registration, and reproducible imaging experiments. In contrast with the general numerical spectral optimization of Song et al., this method uses registration structure to avoid iterative spectral search. Detailed code, processed result tables, and data-preparation instructions accompany the manuscript.
 
-The author will complete the required submission-interface declarations concerning originality, exclusivity, author contributions, competing interests, and contact details.
+The author confirms that the work is original, unpublished, and not under consideration elsewhere; that it does not extend a prior conference paper; that there is no specific funding and no competing interest; and that the submission-interface author-contribution and contact fields will be completed as required.
 
 Sincerely,
 Xiaohui Xie

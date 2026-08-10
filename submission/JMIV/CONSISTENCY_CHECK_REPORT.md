@@ -37,8 +37,10 @@ and the submission build script.
 ## Non-blocking warnings
 
 The Springer class emits bookmark-level and underfull-page warnings for the
-long source. The clean source compilation has no undefined controls,
-undefined citations, or overfull text boxes. The official JMIV guideline still
-mentions `[iicol]`, whereas the current official SN Article Template v3.1 does
-not implement that option; the source therefore uses the current compiling
-`sn-mathphys-num` configuration, as documented in `JMIV_requirements.md`.
+long source. The clean source compilation has no undefined controls or
+undefined citations. The `iicol` layout produces several non-fatal
+overfull-display warnings in detailed optional certificate derivations and
+appendices; these should be resolved if those secondary derivations remain in
+the main manuscript. The official JMIV guideline requests `[iicol]`, and the
+current official SN Article Template v3.1 implements it; the submission source
+uses `pdflatex,iicol,sn-mathphys-num`.

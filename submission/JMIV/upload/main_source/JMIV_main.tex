@@ -1,5 +1,6 @@
-\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+\documentclass[pdflatex,iicol,sn-mathphys-num]{sn-jnl}
 \usepackage{amsmath,amssymb,amsthm,mathtools,bm,booktabs,array,multirow,float,graphicx,xcolor,microtype,hyperref,enumitem,url,cleveref}
+\setlength{\tabcolsep}{3pt}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proposition}[theorem]{Proposition}\newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}\newtheorem{assumption}[theorem]{Assumption}
@@ -46,7 +47,7 @@ The scaled ADMM iteration and practical residual stopping criteria were systemat
 
 Song et al. \cite{Song2024} is the closest work. It formulates ADMM/oADMM for general linear quadratic problems, optimizes the penalty from the iteration spectrum, and gives a closed-form relaxation parameter for fixed penalty. It includes diffeomorphic image registration as an application. The distinction sought here is not another full-spectrum objective: it is a registration-specific finite predictor obtained from four algebraic corners without gradient descent or repeated ADMM trials, accompanied by a separately evaluated signed certificate.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
 \caption{Comparison with the closest general LQP method.}
 \begin{tabular}{p{0.22\linewidth}p{0.32\linewidth}p{0.36\linewidth}}
@@ -60,7 +61,7 @@ Variable coefficients & Full iteration spectrum & Local predictor plus signed no
 Empirical conclusion & Imaging improvements reported & FIRE and CIMA matched-accuracy runtime reductions\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{ADMM and variational diffeomorphic registration}
 DARTEL \cite{Ashburner2007} and diffeomorphic demons \cite{Vercauteren2009} are influential optimization-based registration methods. Thorley et al. proposed a fast diffeomorphic method that composes nonstationary velocity updates and solves arbitrary-order regularized convex subproblems with accelerated ADMM on GPUs \cite{Thorley2021}. Song et al. later used a closely related quadratic registration model to evaluate spectrally optimized ADMM and oADMM \cite{Song2024}.
@@ -100,9 +101,11 @@ The registration subproblem is
 \end{equation}
 Introduce $w=v$:
 \begin{equation}
+\begin{aligned}
 \min_{v,w}\;f(v)+g(w)
-:=\frac12v^\top Hv+b^\top v+\frac12w^\top Gw,
-\qquad v-w=0.
+&:=\frac12v^\top Hv+b^\top v+\frac12w^\top Gw,\\
+&\hspace{3em}v-w=0.
+\end{aligned}
 \label{eq:split}
 \end{equation}
 
@@ -123,9 +126,9 @@ The linear term $b$ shifts the fixed point but does not affect error propagation
 \section{Exact Reduced Iteration}
 Define the resolvents and Cayley transforms
 \begin{align}
-P_H(\rho)&=\rho(H+\rho I)^{-1},&
+P_H(\rho)&=\rho(H+\rho I)^{-1},\\
 C_H(\rho)&=(H-\rho I)(H+\rho I)^{-1}=I-2P_H(\rho),\\
-P_G(\rho)&=\rho(G+\rho I)^{-1},&
+P_G(\rho)&=\rho(G+\rho I)^{-1},\\
 C_G(\rho)&=(G-\rho I)(G+\rho I)^{-1}=I-2P_G(\rho).
 \end{align}
 
@@ -297,6 +300,7 @@ U_{\mathrm{LFA}}(\rho,\alpha)
 Thus the full local Fourier calculation reduces to a small finite set even in three dimensions.  For the global rank-one predictor, Theorem~\ref{thm:global_four} sharpens this set to four entries; patchwise sets remain useful only when deliberately constructing a local rather than global model.
 
 \section{Optional Variable-Coefficient Rate Certification}
+\begingroup\small
 For completeness, we retain the original frozen-patch perturbation certificate as a rigorous but deliberately conservative baseline. It replaces both $H$ and $G$ and is not used to select the practical predictor parameters. Define
 \begin{equation}
 \delta_H=\norm{H-\widetilde H}_2,
@@ -444,6 +448,7 @@ and $[H,G]_{ij}=G_{ij}(H_i-H_j)$.  This proves that nonnormality is controlled b
 
 For the rank-one model, a block rotation $R_i$ aligned with $q_i$ diagonalizes $H_i$ exactly.  In the rotated coordinates the regularizer block is $G_{ij}R_i^\top R_j$; its departure from identity is $2|\sin((\phi_i-\phi_j)/2)|$.  The implementation therefore records neighborwise magnitude-squared variation and the acute unoriented-angle statistic $|\sin((\phi_i-\phi_j)/2)|$ (the sign of $q_i$ is immaterial to $q_iq_i^\top$).  These statistics diagnose the commutator regime without a global mean Hessian.
 
+\endgroup
 \section{Finite Four-Corner Parameter Selection}
 We use ``search-free'' to mean that no grid search, gradient descent in $(\rho,\alpha)$, repeated ADMM trial, or repeated full iteration-matrix eigensolve is performed. The practical method extracts curvature and symbol endpoints once, generates a finite algebraic candidate set, and evaluates the constant-model predictor envelope; any certificate is evaluated separately at the selected pair.
 
@@ -631,7 +636,7 @@ this numerical optimization is diagnostic only.
 \subsection{Exactness and four-corner reduction}
 We used $n\times n$ periodic grids, data curvatures $(0.2,2.3)$, and first-order regularization with $(\beta,\gamma)=(0.2,0.1)$.  The finite selector returned $(\rho,\alpha)=(0.5435121024,1.8981520705)$ on every grid.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
 \caption{Constant-coefficient verification; the local envelope agrees with the direct radius to machine precision.}
 \begin{tabular}{rccc}
@@ -643,7 +648,7 @@ $n$ & Direct radius & $|U_{\rm LFA}-\rho(T)|$ & Selection (ms)\\
 8 & 0.35313044 & $<10^{-15}$ & 4.6\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Rate-certificate diagnostic}
 Minimizing the global additive perturbation bound produced over-conservative
@@ -655,7 +660,7 @@ parameter gaps 0.595 and 0.386), but remains too loose to serve as an online
 tuning objective. Detailed constructions and stress tests are reported in the
 supplementary material.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
 \caption{Controlled structured-envelope results (18 cases).}
 \begin{tabular}{lrrrr}
@@ -668,7 +673,7 @@ Commutator rectangle & 0.602 & 0.431 & 0\\
 Comparison rectangle & 0.595 & 0.386 & 0\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Optional rate-certificate diagnostic}
 We next separated periodic magnitude variation, smooth orientation variation, a
@@ -679,10 +684,10 @@ At the selected parameters, the rigorous comparison bound was below one in all
 ten cases. Its median relative gap was 1.29, confirming validity but also the
 substantial conservatism that limits its use to diagnostic rate analysis.
 
-\begin{figure}[t]
-\centering\includegraphics[width=.98\linewidth]{Fig1.pdf}
+\begin{figure*}[t]
+\centering\includegraphics[width=.98\textwidth]{Fig1.pdf}
 \caption{Spectral validation. \textbf{Left:} the Fourier envelope is exact in constant-coefficient periodic systems. \textbf{Middle:} the four-corner predictor has a small spectral-radius gap in smooth variable-coefficient cases. \textbf{Right:} the signed rate certificate is rigorous but conservative.}
-\end{figure}
+\end{figure*}
 
 \subsection{Truncated-certificate scaling}
 The rigorous truncated-kernel certificate had no violation in 20 tests spanning
@@ -711,7 +716,7 @@ discrete Jacobian.  The experiment therefore passes the predeclared pilot
 iteration, runtime, accuracy, overhead, and folding gates, but its two images
 and controlled warps are insufficient for a clinical or benchmark claim.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
 \caption{Held-out public-image-content pilot; medians over paired runs.}
 \begin{tabular}{lrr}
@@ -725,7 +730,7 @@ Selection overhead & 1.58\% & $<2$\%\\
 Nonpositive-Jacobian cases & 0/6 & 0\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{CIMA differently stained histology landmark benchmark}
 We then evaluated the public lung-lesion-3 sample distributed with the CIMA
@@ -759,7 +764,7 @@ upsampling failures that motivated the final shared safeguards; those raw runs
 are preserved.  Consequently, the final CIMA estimate is a reproducible
 exploratory benchmark, not a held-out confirmatory dataset result.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
 \caption{CIMA landmark results; accuracy medians over ten pairs and timing over 50 paired runs.}
 \begin{tabular}{lrrr}
@@ -774,7 +779,7 @@ External fixed $(0.1,1)$ & 303.5 & 2.53 & 7.3306\\
 Four-corner, one shot & 210.0 & 2.02 & 7.3306\\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 For a Song-style diagnostic, we formed the exact variable-coefficient reduced
 operator on an $8\times8$ surrogate for every pair, optimized $\rho$
@@ -811,11 +816,11 @@ iterations on an 18-pair balanced ablation (222 versus 243), but its tuning cost
 made it slower overall (3.895 versus 2.651 seconds); one-shot reuse is therefore
 the recommended policy.
 
-\begin{table}[ht]
+\begin{table*}[ht]
 \centering
 \small
 \caption{FIRE, 134 pairs at $256^2$; identical initialization and solver protocol.}
-\begin{tabular}{p{0.27\linewidth}rrrr}
+\begin{tabular}{p{0.27\textwidth}rrrr}
 \toprule
 Method & Iterations & Total time (s) & TRE (px) & TRE/diagonal (\%)\\
 \midrule
@@ -826,16 +831,16 @@ Fixed oADMM (1.0, 1.8) & 1529.5 & 23.471 & 5.50194 & 1.51971\\
 \textbf{Four-corner one-shot} & 245.0 & 4.774 & 5.50177 & 1.51966\\
 \bottomrule%
 \end{tabular}
-\end{table}
+\end{table*}
 
 Reported percentage reductions are medians of pairwise percentage changes; they
 therefore need not equal percentage differences between separately reported
 method medians.
 
-\begin{figure}[H]
-\centering\includegraphics[width=.98\linewidth]{Fig2.pdf}
+\begin{figure*}[t]
+\centering\includegraphics[width=.98\textwidth]{Fig2.pdf}
 \caption{FIRE benchmark at $256\times256$ ($n=134$). (a) Pairwise total-runtime reduction of one-shot four-corner tuning relative to the externally validation-selected fixed pair, stratified by A/P/S group. (b) Corresponding inner-iteration reduction. (c) Landmark TRE for the two methods; the identity line indicates unchanged accuracy. (d) The predicted penalty varies with maximum data curvature, demonstrating image-dependent tuning. Percentage reductions are computed per pair before group summaries.}
-\end{figure}
+\end{figure*}
 
 \subsection{One-shot reuse ablation}
 On the balanced 18-pair FIRE ablation, retuning at every pyramid level reduced
@@ -867,10 +872,11 @@ optimization.
 Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$. Most exact spectral experiments remain small. CIMA validation uses only one five-image tissue set at reduced resolution. FIRE uses a $256^2$ CPU protocol against an externally validation-selected fixed comparator, residual balancing, and a safeguarded BB proxy; the BB method is not a complete reproduction of every published adaptive ADMM variant, and the study does not establish full-resolution clinical throughput. The certificate is an optional rate bound, not a prerequisite for convergence. The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
 
 \section{Data and Code Availability}
-The accompanying repository contains source code, tests, configurations, raw
-processed JSON/CSV outputs, and FIRE/CIMA preparation and evaluation scripts.
-The FIRE archive remains excluded from version control. Supplementary
-Information is supplied as Online Resource 1.
+Source code, tests, configurations, raw processed JSON/CSV outputs, and
+FIRE/CIMA preparation and evaluation scripts are available at
+\url{https://github.com/xhxuciedu/admm-registration}. The FIRE archive remains
+excluded from version control. Supplementary Information is supplied as Online
+Resource 1.
 
 \section{Conclusion}
 For well-posed linearized registration subproblems, admissible ADMM parameters

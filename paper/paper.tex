@@ -152,9 +152,11 @@ The registration subproblem is
 \end{equation}
 Introduce $w=v$:
 \begin{equation}
+\begin{aligned}
 \min_{v,w}\;f(v)+g(w)
-:=\frac12v^\top Hv+b^\top v+\frac12w^\top Gw,
-\qquad v-w=0.
+&:=\frac12v^\top Hv+b^\top v+\frac12w^\top Gw,\\
+&\hspace{3em}v-w=0.
+\end{aligned}
 \label{eq:split}
 \end{equation}
 
@@ -175,9 +177,9 @@ The linear term $b$ shifts the fixed point but does not affect error propagation
 \section{Exact Reduced Iteration}
 Define the resolvents and Cayley transforms
 \begin{align}
-P_H(\rho)&=\rho(H+\rho I)^{-1},&
+P_H(\rho)&=\rho(H+\rho I)^{-1},\\
 C_H(\rho)&=(H-\rho I)(H+\rho I)^{-1}=I-2P_H(\rho),\\
-P_G(\rho)&=\rho(G+\rho I)^{-1},&
+P_G(\rho)&=\rho(G+\rho I)^{-1},\\
 C_G(\rho)&=(G-\rho I)(G+\rho I)^{-1}=I-2P_G(\rho).
 \end{align}
 
@@ -914,10 +916,11 @@ optimization.
 Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$. Most exact spectral experiments remain small. CIMA validation uses only one five-image tissue set at reduced resolution. FIRE uses a $256^2$ CPU protocol against an externally validation-selected fixed comparator, residual balancing, and a safeguarded BB proxy; the BB method is not a complete reproduction of every published adaptive ADMM variant, and the study does not establish full-resolution clinical throughput. The certificate is an optional rate bound, not a prerequisite for convergence. The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
 
 \section{Data and Code Availability}
-The accompanying repository contains source code, tests, configurations, raw
-processed JSON/CSV outputs, and FIRE/CIMA preparation and evaluation scripts.
-The FIRE archive remains excluded from version control. Supplementary
-Information is supplied as Online Resource 1.
+Source code, tests, configurations, raw processed JSON/CSV outputs, and
+FIRE/CIMA preparation and evaluation scripts are available at
+\url{https://github.com/xhxuciedu/admm-registration}. The FIRE archive remains
+excluded from version control. Supplementary Information is supplied as Online
+Resource 1.
 
 \section{Conclusion}
 For well-posed linearized registration subproblems, admissible ADMM parameters

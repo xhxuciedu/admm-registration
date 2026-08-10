@@ -5,7 +5,7 @@ Verified 2026-08-10 against the official [JMIV submission guidelines](https://li
 | Requirement | Package status |
 |---|---|
 | Article category | Prepared as a Regular Paper. |
-| Title page | Contains author name, affiliation, city/state/country, and e-mail. Corresponding-author telephone/fax must be completed in the submission interface; see TODO. |
+| Title page | Contains author name, affiliation, city/state/country, and e-mail. Telephone is recorded in metadata; fax is not applicable. |
 | Abstract | 128 words; JMIV requires 100--150 words. |
 | Keywords | Five indexing keywords are supplied; JMIV requests four to six. |
 | Citations | Numbered citations are used in the manuscript. |
@@ -15,18 +15,16 @@ Verified 2026-08-10 against the official [JMIV submission guidelines](https://li
 | Supplement | `upload/ESM_1_Supplementary_Information.pdf` contains title, journal, author, affiliation, and e-mail, and the main text cites it as Online Resource 1. |
 | Declarations | Author-contribution and competing-interest information must be supplied through the submission interface. |
 
-## Template and `iicol` compatibility
+## Template and `iicol` configuration
 
 The original official template downloaded for this package is Springer Nature
 SN Article Template v3.1 (December 2024), preserved unchanged in
-`template_original/sn-article-template/`.  Its supplied `sn-jnl.cls` and
-example source provide the `sn-mathphys-num` numbered mathematical-physical
-science style but do **not** define the legacy `iicol` class option.  The JMIV
-guideline page still recommends `[iicol]`.  The submitted source therefore
-uses the current official, compiling configuration
-`\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}` rather than inventing an
-unsupported option.  Confirm this template-option transition with JMIV/SNAPP
-at upload if the portal rejects the current official class configuration.
+`template_original/sn-article-template/`. Its supplied `sn-jnl.cls` defines
+both the `iicol` layout option and the `sn-mathphys-num` numbered
+mathematical-physical-science reference style. The submitted source uses the
+official compiling configuration
+`\documentclass[pdflatex,iicol,sn-mathphys-num]{sn-jnl}` requested by the JMIV
+guideline page.
 
 ## Submission-system notes
 

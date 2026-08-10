@@ -32,6 +32,9 @@ submission/JMIV/supplement/*.log
 submission/JMIV/cover_letter/*.aux
 submission/JMIV/cover_letter/*.log
 
+# Author-controlled portal metadata; never commit or include in public uploads
+submission/JMIV/private/
+
 # Temporary and intermediate research files
 tmp/
 temp/

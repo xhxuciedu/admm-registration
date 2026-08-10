@@ -1,28 +1,24 @@
 # Author confirmation required before submission
 
-This file deliberately does not invent author-controlled facts.  Resolve each
-item in SNAPP and, where appropriate, in the final source.
+Confirmed author-controlled facts are retained below for direct entry into
+SNAPP. Only the final portal actions and permissions check remain open.
 
-- [ ] Confirm that the manuscript is original, unpublished, and not under
-  review elsewhere, as JMIV requires.
-- [ ] Confirm that no material requires third-party permission, or upload all
-  permission evidence.
-- [ ] Enter the corresponding-author telephone number and fax status (if
-  requested by the portal).
-- [ ] Confirm the author-contribution statement required by the submission
-  interface.
-- [ ] Declare competing interests (including any editorial-board relationship)
-  through the submission interface.
-- [ ] Confirm funding, grant numbers, and acknowledgments; add only verified
-  information to the final manuscript.
-- [ ] Confirm the public code/repository URL and archival release/DOI, if one
-  will be cited in the Data and Code Availability statement.
-- [ ] Add ORCID only if the author authorizes it.
-- [ ] Decide whether to suggest reviewers.  No reviewer names, e-mails, or
-  conflict-of-interest claims are included because they cannot be inferred.
-- [ ] Confirm whether the article is a new work or an extension of any prior
-  conference paper; if an extension, disclose and cite it as JMIV requires.
-- [ ] Confirm the final author name, affiliation, e-mail, title, abstract, and
-  keyword spellings in the portal.
-- [ ] Confirm whether the journal requests any additional anonymization or
-  author-identification settings at initial submission.
+- [x] Confirmed: the manuscript is original, unpublished, and not under review
+  elsewhere, as JMIV requires.
+- [x] Confirmed: no included material requires third-party permission.
+- [x] Corresponding telephone and ORCID are recorded in the private portal note
+  and must be entered directly in SNAPP; neither is stored in this repository.
+  Fax: not applicable.
+- [x] Author-contribution statement: “Xiaohui Xie conceived the study,
+  developed the methodology and software, performed the experiments and
+  analysis, and wrote the manuscript.”
+- [x] Competing interests: “The author declares no competing interests.”
+- [x] Funding: no specific funding.
+- [x] Public code URL: https://github.com/xhxuciedu/admm-registration
+- [x] Reviewer suggestions: none.
+- [x] Prior conference paper: none.
+- [x] Final author, affiliation, e-mail, title, abstract, and keyword spelling
+  confirmed for portal entry.
+- [ ] At upload, verify SNAPP's current author-identification setting. The JMIV
+  guidance does not request a blinded manuscript; this package is prepared as
+  an identified regular-paper submission.
