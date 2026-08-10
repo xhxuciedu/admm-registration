@@ -93,3 +93,34 @@ def test_four_corner_degenerate_and_nullspace_cases():
         rho,alpha,value,candidates=select_four_corner(h,g,(1e-8,10))
         assert 1e-8<=rho<=10 and 0<alpha<=2 and np.isfinite(value)
         assert len(candidates)>=2
+
+
+def _cayley(a, rho):
+    return (a-rho*np.eye(a.shape[0])) @ np.linalg.inv(a+rho*np.eye(a.shape[0]))
+
+
+def test_well_posed_psd_cayley_product_is_strictly_contracting():
+    rng=np.random.default_rng(8117)
+    for _ in range(40):
+        # PSD summands, including individually singular cases, with a positive
+        # definite sum.
+        a=rng.normal(size=(4,3)); b=rng.normal(size=(4,3))
+        h=a@a.T; g=b@b.T+.03*np.eye(4)
+        for rho in (.03,.7,8.):
+            q=np.linalg.norm(_cayley(h,rho)@_cayley(g,rho),2)
+            assert q < 1-1e-10
+            for alpha in (.05,1.,2.):
+                assert spectral_radius(reduced_matrix(h,g,rho,alpha)) < 1-1e-10
+
+
+def test_common_nullspace_has_unit_reduced_mode():
+    h=np.diag([1.,0.,0.]); g=np.diag([0.,2.,0.]); x=np.array([0.,0.,1.])
+    rho,alpha=.8,1.7
+    np.testing.assert_allclose(_cayley(h,rho)@_cayley(g,rho)@x,x)
+    np.testing.assert_allclose(reduced_matrix(h,g,rho,alpha)@x,x)
+
+
+def test_near_singular_well_posed_problem_can_be_slow():
+    h=np.diag([1.,1e-10]); g=np.diag([1.,1e-10])
+    q=np.linalg.norm(_cayley(h,1.)@_cayley(g,1.),2)
+    assert q > .999999999

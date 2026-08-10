@@ -211,7 +211,39 @@ Consequently,
 
 The proof is given in Appendix~\ref{app:reduced}. The product $C_HC_G$ is generally nonnormal because $H$ and $G$ do not commute. This is precisely why a global simultaneous diagonalization is unavailable for registration.
 
-\section{Frozen-Patch Local Spectral Envelope}
+\begin{theorem}[Basic contraction is independent of tuning]\label{thm:basic-contraction}
+Let $H,G\succeq0$ and $H+G\succ0$. For every $\rho>0$,
+\[
+q_\rho:=\norm{C_H(\rho)C_G(\rho)}_2<1.
+\]
+Consequently, for every $0<\alpha\le2$,
+\[
+\spr(E_{\rho,\alpha})\le\norm{E_{\rho,\alpha}}_2
+\le1-\frac\alpha2+\frac\alpha2q_\rho
+=1-\frac\alpha2(1-q_\rho)<1.
+\]
+\end{theorem}
+\begin{proof}
+For a PSD matrix $A$, the Cayley eigenvalue at $\lambda\ge0$ is
+$(\lambda-\rho)/(\lambda+\rho)$, whose modulus is at most one, with equality
+only at $\lambda=0$. Thus $\norm{C_Ax}_2\le\norm{x}_2$, with equality exactly
+when $x\in\ker A$. If equality held for $C_HC_G$ on a unit vector, equality
+in both inequalities $\norm{C_HC_Gx}_2\le\norm{C_Gx}_2\le\norm{x}_2$ would give
+$x\in\ker G$, hence $C_Gx=-x$, and $C_Gx\in\ker H$. Therefore
+$x\in\ker H\cap\ker G$, contradicting $H+G\succ0$. Compactness of the unit
+sphere gives $q_\rho<1$. The displayed oADMM bound follows by the triangle
+inequality; its coefficients are nonnegative for $0<\alpha\le2$.
+\end{proof}
+
+\paragraph{Nullspaces and conventions.} If a nonzero $x$ lies in both kernels,
+then $C_Hx=C_Gx=-x$, $C_HC_Gx=x$, and $E_{\rho,\alpha}x=x$. This is a nonunique
+objective direction, not tuning-induced instability. Registration removes it by
+zeroth-order regularization, appropriate boundary conditions, or restriction to
+the identifiable subspace. The endpoint $\alpha=2$ is valid for the reduced
+linear contraction above; implementations whose standard oADMM theorem assumes
+$\alpha<2$ should retain that conventional restriction.
+
+\section{Four-Corner Spectral Tuning}
 \subsection{Patch surrogate}
 Partition the image grid into patches $\{\Omega_r\}_{r=1}^{R}$. On patch $r$, choose a representative image-gradient Hessian
 \begin{equation}
@@ -698,7 +730,7 @@ certificate only to audit that selection.
 \begin{table}[ht]
 \centering
 \caption{Controlled structured-envelope results (18 cases).}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
 Method & Enclosure gap & Parameter gap & Collapses\\
 \midrule
@@ -856,16 +888,22 @@ the recommended policy.
 \begin{table}[ht]
 \centering
 \caption{FIRE, 134 pairs at $256^2$; identical initialization and solver protocol.}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Method & Iterations & Total time (s) & Median TRE (px)\\
+Method & Iterations & Total time (s) & TRE (px) & TRE/diagonal (\%)\\
 \midrule
-External fixed $(0.1,1)$ & 412.0 & 6.680 & 5.50178\\
-BB adaptive proxy & 623.5 & 9.435 & 5.50175\\
-Four-corner, one shot & 245.0 & 4.774 & 5.50177\\
+External fixed $(0.1,1)$ & 412.0 & 6.680 & 5.50178 & 1.51967\\
+Residual balancing & 1434.0 & 22.325 & 5.50211 & 1.51976\\
+BB adaptive proxy & 623.5 & 9.435 & 5.50175 & 1.51966\\
+Fixed oADMM $(1,1.8)$ & 1529.5 & 23.471 & 5.50194 & 1.51971\\
+Four-corner, one shot & 245.0 & 4.774 & 5.50177 & 1.51966\\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Reported percentage reductions are medians of pairwise percentage changes; they
+therefore need not equal percentage differences between separately reported
+method medians.
 
 \begin{figure}[H]
 \centering\includegraphics[width=.98\linewidth]{../figures/fire256_headline.pdf}
@@ -892,7 +930,7 @@ Outside the constant-gradient setting, selected parameters are not claimed to mi
 Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula.  Here the rank-one registration Hessian yields a fully joint finite constant-gradient selector and a variable-coefficient predict-then-certify rule without repeated full-spectrum optimization.  On CIMA, an exact numerical optimizer on $8\times8$ variable-coefficient surrogates incurred more tuning cost and transferred less effectively than the four-corner rule.  Full-resolution Song optimization remains computationally out of scope, so the experiment is explicitly a coarse-surrogate diagnostic.
 
 \subsection{Limitations}
-Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$.  Most exact spectral experiments remain small.  CIMA validation uses only one five-image tissue set at reduced resolution; one stain pair remains poorly aligned, and its bootstrap interval quantifies timing repeatability rather than population-level generalization.  FIRE uses a $128^2$ CPU protocol and one external fixed comparator, not a FIRE validation-tuned or complete adaptive-ADMM baseline.  The BB method is a safeguarded proxy rather than a complete published AADMM reproduction.  A certificate below one proves convergence but its loose value does not predict the true rate accurately.  The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
+Even Perron comparison remains loose because block norms discard directional cancellation in the dense $C_G$. Most exact spectral experiments remain small. CIMA validation uses only one five-image tissue set at reduced resolution. FIRE uses a $256^2$ CPU protocol against an externally validation-selected fixed comparator, residual balancing, and a safeguarded BB proxy; the BB method is not a complete reproduction of every published adaptive ADMM variant, and the study does not establish full-resolution clinical throughput. The certificate is an optional rate bound, not a prerequisite for convergence. The theory concerns a convex linearized subproblem, not global convergence of the outer diffeomorphic scheme.
 
 \subsection{Extensions}
 Promising extensions include overlapping Schwarz-type local symbols, adaptive patch refinement driven by the certificate, multi-penalty ADMM with separate data and regularization metrics, and online reuse of local curvature summaries across pyramid levels. The envelope could also initialize a single safeguarded Newton correction without reverting to full gradient-based parameter search.
@@ -1059,9 +1097,9 @@ C. Rodrigo, F. J. Gaspar, and L. T. Zikatanov,
 arXiv:1710.00408, 2017.
 
 \bibitem{Song2024}
-J. Song, W. Lu, Y. Tang, et al.,
-``Optimizing ADMM and over-relaxed ADMM parameters for linear quadratic problems,''
-\emph{Proceedings of the AAAI Conference on Artificial Intelligence}, vol. 38, no. 8, pp. 14972--14980, 2024.
+J. Song, W. Lu, Y. Lei, Y. Tang, Z. Pan, and J. Duan,
+``Optimizing ADMM and Over-Relaxed ADMM Parameters for Linear Quadratic Problems,''
+\emph{Proceedings of the AAAI Conference on Artificial Intelligence}, vol. 38, no. 8, pp. 8117--8125, 2024.
 
 \bibitem{Teixeira2016}
 A. Teixeira, E. Ghadimi, I. Shames, H. Sandberg, and M. Johansson,
