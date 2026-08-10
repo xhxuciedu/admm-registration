@@ -8,6 +8,7 @@ audit JSON makes that replacement explicit.
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results" / "real2d_v1"
 FIGURES = ROOT / "figures"
+PAPER = ROOT / "paper"
 METHODS = ["manual_external", "fixed_1_18", "residual_balance",
            "adaptive_bb_proxy", "predict_pair_full"]
 LABELS = {"manual_external": "Validation-selected fixed\n(0.1, 1.0)",
@@ -72,6 +74,9 @@ def paired(data: pd.DataFrame, baseline: str, rng: np.random.Generator) -> dict:
 
 
 def plot_headline(data: pd.DataFrame, strongest: str) -> None:
+    plt.rcParams.update({"font.size": 9, "axes.labelsize": 9, "axes.titlesize": 10,
+                         "xtick.labelsize": 8, "ytick.labelsize": 8, "pdf.fonttype": 42,
+                         "ps.fonttype": 42, "axes.linewidth": .8})
     FIGURES.mkdir(exist_ok=True)
     proposed = data[data.method == "predict_pair_full"].set_index("pair")
     base = data[data.method == strongest].set_index("pair")
@@ -79,22 +84,24 @@ def plot_headline(data: pd.DataFrame, strongest: str) -> None:
     p, b = proposed.loc[common], base.loc[common]
     runtime = 100 * (b.total_seconds-p.total_seconds)/b.total_seconds
     iterations = 100 * (b.inner_iterations-p.inner_iterations)/b.inner_iterations
-    tre_delta = p.median_tre-b.median_tre
-    fig, ax = plt.subplots(2, 2, figsize=(10.6, 7.2), constrained_layout=True)
+    fig, ax = plt.subplots(2, 2, figsize=(7.15, 5.55), constrained_layout=True)
     groups = ["A", "P", "S"]
     for axis, values, title, ylabel in [(ax[0, 0], runtime, "Paired total-runtime improvement", "Improvement (%)"),
                                         (ax[0, 1], iterations, "Paired inner-iteration improvement", "Improvement (%)")]:
         samples = [values[p.group == g].to_numpy() for g in groups]
-        bp = axis.boxplot(samples, labels=groups, patch_artist=True, showfliers=False,
+        bp = axis.boxplot(samples, tick_labels=[f"{g}\n(n={len(x)})" for g, x in zip(groups, samples)], patch_artist=True, showfliers=False,
                           medianprops={"color": "black", "linewidth": 1.4})
         for box in bp["boxes"]: box.set(facecolor="#9ecae1", edgecolor="#0072b2")
-        axis.axhline(0, color="0.4", lw=.8); axis.set(title=title, xlabel="FIRE group", ylabel=ylabel)
-    ax[1, 0].scatter(b.median_tre, tre_delta, s=16, alpha=.72, color="#0072b2", edgecolors="none")
-    ax[1, 0].axhline(0, color="0.4", lw=.8); ax[1, 0].set(title="Accuracy difference", xlabel="Baseline median TRE (px)", ylabel="Four-corner − baseline TRE (px)")
-    ax[1, 1].hist(proposed.rho_initial, bins=20, color="#0072b2", alpha=.9, label=r"$\rho_p$")
-    ax[1, 1].set(title="Pair-specific predicted penalties", xlabel=r"$\rho_p$", ylabel="Pairs")
-    ax[1, 1].legend(frameon=False)
-    fig.suptitle(f"FIRE 256: four-corner one-shot versus {LABELS[strongest].replace(chr(10), ' ')}", fontsize=12)
+        axis.axhline(0, color="0.35", lw=.8); axis.set(title=title, ylabel=ylabel)
+        axis.grid(axis="y", color=".9", lw=.6)
+    ax[1, 0].scatter(b.median_tre, p.median_tre, s=15, alpha=.72, color="#0072b2", edgecolors="none")
+    lim=[min(b.median_tre.min(),p.median_tre.min()), max(b.median_tre.max(),p.median_tre.max())]
+    ax[1, 0].plot(lim,lim,color=".3",lw=.9); ax[1, 0].set(title="Landmark accuracy", xlabel="Fixed-pair TRE (px)", ylabel="Four-corner TRE (px)", xlim=lim, ylim=lim, aspect="equal")
+    for group, color in zip(groups,["#0072b2","#d55e00","#009e73"]):
+        z=p[p.group==group]; ax[1,1].scatter(z.h_plus,z.rho_initial,s=18,alpha=.75,label=group,color=color,edgecolors="none")
+    ax[1,1].set(title="Image-dependent penalty selection",xlabel=r"Maximum curvature $h_+$",ylabel=r"Predicted penalty $\rho_p$")
+    ax[1,1].legend(title="FIRE group",frameon=False,fontsize=8,title_fontsize=8,ncol=3,loc="upper right")
+    for label,axis in zip(["(a)","(b)","(c)","(d)"],ax.flat): axis.text(-.16,1.08,label,transform=axis.transAxes,fontweight="bold",fontsize=10)
     fig.savefig(FIGURES / "fire256_headline.pdf", bbox_inches="tight")
     fig.savefig(FIGURES / "fire256_headline.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -117,7 +124,23 @@ def plot_baselines(summary: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def main() -> None:
+def write_fire_table(summary: pd.DataFrame, data: pd.DataFrame) -> None:
+    """Generate the manuscript table from the audited pair-level table."""
+    normalized = 100 * data.groupby("method").median_rtre.median()
+    rows = []
+    for method in ["manual_external", "residual_balance", "adaptive_bb_proxy", "fixed_1_18", "predict_pair_full"]:
+        item = summary.set_index("method").loc[method]
+        label = LABELS[method].replace("\n", " ")
+        if method == "predict_pair_full":
+            label = r"\textbf{" + label + "}"
+        rows.append(f"{label} & {item.median_iterations:.1f} & {item.median_total_seconds:.3f} & {item.median_tre:.5f} & {normalized[method]:.5f}\\\\")
+    target = PAPER / "generated"
+    target.mkdir(exist_ok=True)
+    (target / "fire256_table.tex").write_text("\n".join(rows + [r"\bottomrule"]) + "\n")
+
+
+def rebuild_clean_table() -> pd.DataFrame:
+    """Reconstruct the audited table from checkpoints; used only for audit."""
     metadata = json.loads((ROOT / "data/processed/fire_256/metadata.json").read_text())
     expected = {p["pair"] for p in metadata["pairs"]}
     shard_paths = sorted(RESULTS.glob("fire256_full_APS_*.csv"))
@@ -152,10 +175,33 @@ def main() -> None:
     assert len(data) == len(expected) * len(METHODS)
     data.to_csv(RESULTS / "fire256_final_clean.csv", index=False)
     malformed.to_csv(RESULTS / "fire256_excluded_malformed_rows.csv", index=False)
+    return data
+
+
+def validate_clean_table(data: pd.DataFrame) -> None:
+    """Fail loudly if the committed analysis input is incomplete or malformed."""
+    assert set(data.method) == set(METHODS)
+    assert data.pair.nunique() == 134
+    assert len(data) == 134 * len(METHODS)
+    assert not data.duplicated(["pair", "method"]).any()
+    assert (data.prepared_size == 256).all()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--rebuild-clean", action="store_true",
+                        help="Rebuild the audited table from raw checkpoint files (requires processed FIRE metadata).")
+    args = parser.parse_args()
+    if args.rebuild_clean:
+        data = rebuild_clean_table()
+    else:
+        data = pd.read_csv(RESULTS / "fire256_final_clean.csv")
+    validate_clean_table(data)
 
     rng = np.random.default_rng(20260807)
     summary = method_summary(data)
     summary.to_csv(RESULTS / "fire256_method_summary.csv", index=False)
+    write_fire_table(summary, data)
     baseline_candidates = [m for m in METHODS if m != "predict_pair_full"]
     strongest = summary[summary.method.isin(baseline_candidates)].sort_values("median_total_seconds").iloc[0].method
     comparisons = [paired(data, m, rng) for m in baseline_candidates]
@@ -173,8 +219,8 @@ def main() -> None:
                     median_iterations=("inner_iterations", "median"), median_total_seconds=("total_seconds", "median"),
                     median_tre=("median_tre", "median")).reset_index())
     reuse_summary.to_csv(RESULTS / "fire256_reuse_summary.csv", index=False)
-    audit = {"expected_pairs": len(expected), "final_rows": len(data), "excluded_malformed_rows": len(malformed),
-             "replaced_pairs": sorted(replacement_pairs), "replacement_reason": "early overlapping checkpoint write", "strongest_practical_baseline": strongest,
+    audit = {"expected_pairs": int(data.pair.nunique()), "final_rows": len(data),
+             "analysis_input": "fire256_final_clean.csv", "strongest_practical_baseline": strongest,
              "method_summary": summary.to_dict(orient="records"), "paired_comparisons": comparisons,
              "reuse_summary": reuse_summary.to_dict(orient="records")}
     (RESULTS / "fire256_summary.json").write_text(json.dumps(audit, indent=2) + "\n")

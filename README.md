@@ -21,9 +21,9 @@ PYTHONPATH=. .venv/bin/python experiments/exp_cima_landmarks.py --start 0 --coun
 PYTHONPATH=. .venv/bin/python experiments/exp_cima_repeated_timing.py
 PYTHONPATH=. .venv/bin/python experiments/exp_cima_spectral_baseline.py
 MPLBACKEND=Agg MPLCONFIGDIR=/tmp PYTHONPATH=. .venv/bin/python experiments/analyze_cima.py
-PYTHONPATH=. OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 .venv/bin/python scripts/prepare_fire.py --size 128
-PYTHONPATH=. OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 .venv/bin/python experiments/exp_fire_landmarks.py --groups APS --tag fire_full_128 --methods manual_external,predict_pair_full --initialization phase
-MPLBACKEND=Agg MPLCONFIGDIR=/tmp PYTHONPATH=. .venv/bin/python experiments/analyze_fire.py
+PYTHONPATH=. OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 .venv/bin/python scripts/prepare_fire.py --size 256 --output data/processed/fire_256
+# Rebuild the audited 256x256 FIRE table only when the raw checkpoints and processed metadata are available.
+MPLBACKEND=Agg MPLCONFIGDIR=/tmp PYTHONPATH=. .venv/bin/python experiments/analyze_fire256.py
 cd paper && pdflatex -interaction=nonstopmode -halt-on-error paper.tex && pdflatex -interaction=nonstopmode -halt-on-error paper.tex
 ```
 

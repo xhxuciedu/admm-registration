@@ -1,0 +1,31 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,url}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\spr}{\varrho}
+\title{Supplementary Information: Four-Corner Spectral Tuning for Search-Free ADMM in Diffeomorphic Image Registration}
+\author{Anonymous}
+\date{}
+\begin{document}\maketitle
+
+\section*{S1. Reproducibility and implementation}
+All methods use the same three-level image pyramid, phase-correlation initialization, linearization, stopping tolerances, interpolation, line search, and discrete-Jacobian safeguard. CPU timings use one BLAS/OMP thread per registration. The repository contains the exact environment, seeds, command lines, raw pair-level outputs, and scripts that regenerate all tables and figures. FIRE preprocessing uses a contrast-normalized green channel; supplied landmarks are used only for evaluation. The implementation composes displacement increments directly and enforces local orientation preservation by requiring a positive discrete-Jacobian floor during line search and pyramid transfer. This numerical safeguard does not constitute a global diffeomorphism theorem.
+
+\section*{S2. Baseline implementations}
+The externally validation-selected fixed pair $(\rho,\alpha)=(0.1,1)$ was selected on the controlled public-image pilot, not on FIRE. Residual balancing starts at $\rho=1$ and updates the penalty from primal/dual residual imbalance with dual rescaling. The BB method is a safeguarded Barzilai--Borwein penalty proxy with clipping and periodic updates. Fixed oADMM uses $(1,1.8)$. These details, including update intervals and safeguards, are implemented in \texttt{src/registration2d.py}.
+
+\section*{S3. Legacy and signed rate analyses}
+The main text establishes basic contraction for every admissible pair when $H+G\succ0$. The following analyses are therefore optional quantitative rate bounds, not stability tests: the global perturbation bound, block-Gershgorin disks, commutator rectangles, Perron comparison, and truncated-kernel bounds. The norm-based global perturbation objective is retained as a negative-control diagnostic: its minimization was over-conservative in variable-coefficient tests. Detailed derivations and the corresponding scripts are retained in the repository (\texttt{src/structured\_envelopes.py} and \texttt{experiments/}).
+
+\section*{S4. Additional spectral experiments}
+The 10,000 randomized curvature configurations confirm equality between pixelwise curvature enumeration and the four-corner reduction. In periodic constant-coefficient systems the modal envelope matches the full spectral radius to numerical precision. In smooth variable-coefficient cases the median spectral-radius gap to the numerical oracle is 0.027. Signed enclosures showed no observed violations but were conservative; certificate scaling at $128^2$ remained unsuitable for online use.
+
+\section*{S5. FIRE subgroup and parameter summaries}
+The audited FIRE table contains 134 pairs and five methods per pair. Percentage reductions are computed pairwise before aggregation. For the one-shot predictor, median $\rho_p=0.1008$ (IQR 0.0397; range 0.0688--0.1402) and median $\alpha_p=1.5699$ (IQR 0.1287; range 1.4483--1.6883). The median $h_+$ is 0.2249. Machine-readable summaries and A/P/S subgroup statistics accompany the repository results.
+
+\section*{S6. One-shot reuse ablation}
+On a balanced 18-pair FIRE subset, per-level retuning reduced median inner iterations from 243 to 222 but increased median tuning time from 0.030 to 0.110 seconds and median total time from 2.651 to 3.895 seconds. One-shot reuse is therefore used in the main experiments.
+
+\section*{S7. Data availability}
+FIRE and CIMA are public datasets subject to their respective licenses. Raw images are not redistributed. The repository stores preparation scripts, integrity checks, processed-result schemas, and all nonrestricted pair-level measurements.
+\end{document}

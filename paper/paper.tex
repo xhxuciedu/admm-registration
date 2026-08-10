@@ -50,24 +50,21 @@
 \maketitle
 
 \begin{abstract}
-We present a search-free parameter predictor for ADMM and over-relaxed ADMM in
-diffeomorphic image registration.  The method exploits an exact reduced Cayley
-representation: for rank-one pixelwise data Hessians and a scalar Sobolev
-regularizer, the constant-model tuning problem reduces exactly to four
-curvature--symbol corners and a finite algebraic candidate set.  Spatially
-varying gradients make the iteration nonnormal.  We therefore keep prediction
-and certification separate: signed block, commutator, Perron-comparison, and
-truncated-kernel enclosures audit a selected pair without distorting it toward a
-conservative boundary solution.  The four-corner implementation matched
-pixelwise enumeration in 10,000 randomized configurations; on smooth synthetic
-fields its median spectral-radius gap to numerical optimization was 0.027.  On
-134 landmarked FIRE retinal pairs at $256^2$, one-shot prediction reduced median
-ADMM iterations by 39.6\% and paired total runtime by 34.4\% (95\% bootstrap
-interval 30.7--35.7\%) versus an externally validation-selected fixed pair; it
-was also 51.7\% faster than a safeguarded BB proxy, with indistinguishable
-landmark error and no nonpositive Jacobians.  On ten CIMA histology pairs it
-reduced matched-protocol runtime by 20.1\%.  The present certificate is rigorous
-but too conservative for routine registration-time selection.
+ADMM parameter choice strongly affects the runtime of variational image
+registration. For a well-posed quadratic subproblem, every admissible ADMM
+penalty and relaxation is already contractive; the practical task is therefore
+to select a rapidly convergent pair without numerical spectral search. The
+rank-one pixelwise registration Hessian and scalar Sobolev symbol reduce the
+constant-model tuning problem exactly to four curvature--symbol corners. A
+finite algebraic candidate set consequently yields one-shot joint tuning of
+$(\rho,\alpha)$. On 134 FIRE retinal pairs at $256\times256$, the predictor
+reduced median pairwise runtime by 34.4\% (95\% bootstrap CI 30.7--35.7\%) and
+inner iterations by 39.6\% relative to an externally validation-selected fixed
+pair; it was also 51.7\% faster than a safeguarded BB proxy. Landmark error and
+discrete-Jacobian statistics were unchanged. On ten CIMA histology pairs,
+matched-protocol runtime decreased by 20.1\%. Signed variable-coefficient
+enclosures provide optional rigorous rate bounds, but are conservative and are
+not part of the timed algorithm.
 \end{abstract}
 
 \section{Introduction}
@@ -84,20 +81,14 @@ where $I_x,I_y$ are spatial image derivatives, $I_t$ is the current temporal or 
 
 The penalty $\rho$ and relaxation $\alpha$ strongly affect convergence. Fixed defaults, residual balancing, and adaptive spectral rules can be effective, but they do not exploit the unusually specific geometry of registration: the data Hessian is block diagonal with rank-one $2\times2$ blocks, while the regularizer is a scalar elliptic operator applied identically to each velocity component. General quadratic ADMM theory derives optimal parameters for special classes \cite{Ghadimi2015,Teixeira2016,GiselssonBoyd2017}; more recently, Song et al. optimized $\rho$ numerically for general linear quadratic problems and derived an optimal $\alpha$ conditional on $\rho$, including experiments on diffeomorphic registration \cite{Song2024}. Their registration penalty still requires spectral optimization.
 
-This work asks a narrower question:
-\begin{quote}
-Can the registration structure replace iterative spectral optimization by a finite, analytically generated parameter predictor, with an optional rigorous diagnostic for the full variable-coefficient iteration?
-\end{quote}
-
 Our answer is based on local Fourier analysis (LFA), a classical tool for predicting and optimizing stationary iterations for constant-coefficient differential operators \cite{ChanElman1989,WienandsJoppich2005}. Standard LFA is exact for translation-invariant periodic problems, while nonstandard variants can remain predictive for jumping and random coefficients \cite{Kumar2019,Rodrigo2017}. Here, the coefficients that vary are the image-gradient blocks in the data Hessian. We freeze those blocks over patches, derive the exact patchwise ADMM symbol, and then control the discrepancy to the full iteration by a resolvent perturbation argument.
 
 \paragraph{Contributions.}
 \begin{enumerate}[leftmargin=2em]
-\item We derive an exact reduced Cayley-product representation for ADMM and oADMM applied to the split registration quadratic.
-\item We introduce a frozen-patch local spectral model in which the ADMM spectrum is explicit. The worst local factor is attained at finitely many data-curvature and regularizer-frequency corners.
-\item We retain the exact convolutional regularizer and derive signed block-Gershgorin, commutator, row-sum, Perron-comparison, and truncated-kernel enclosures for the noncommuting variable-coefficient iteration. The earlier global additive perturbation is retained only as a conservative baseline.
-\item We give a finite-candidate, search-free constant-model predictor. For rank-one registration blocks, its global curvature range reduces exactly to four data-symbol corners; conditional relaxation is selected from a finite closed-form set. Parameter prediction and optional certification are deliberately separate.
-\item We validate the method on 10,000 randomized curvature configurations, controlled synthetic regimes, 134 public FIRE retinal landmark pairs, and ten public CIMA histology landmark pairs.
+\item An exact reduced Cayley representation and strict-contraction characterization for well-posed quadratic registration subproblems.
+\item An exact four-corner reduction and finite algebraic, search-free joint predictor for rank-one registration Hessians.
+\item Optional signed variable-coefficient rate enclosures for nonnormal iterations.
+\item FIRE and CIMA validation demonstrating lower end-to-end runtime at matched landmark accuracy and topology.
 \end{enumerate}
 
 
@@ -356,7 +347,7 @@ U_{\mathrm{LFA}}(\rho,\alpha)
 \end{equation}
 Thus the full local Fourier calculation reduces to a small finite set even in three dimensions.  For the global rank-one predictor, Theorem~\ref{thm:global_four} sharpens this set to four entries; patchwise sets remain useful only when deliberately constructing a local rather than global model.
 
-\section{Legacy Global-Perturbation Baseline}
+\section{Optional Variable-Coefficient Rate Certification}
 For completeness, we retain the original frozen-patch perturbation certificate as a rigorous but deliberately conservative baseline. It replaces both $H$ and $G$ and is not used to select the practical predictor parameters. Define
 \begin{equation}
 \delta_H=\norm{H-\widetilde H}_2,
@@ -403,7 +394,7 @@ Larger $\rho$ suppresses the perturbation term, while excessively large $\rho$ w
 If the selected parameters satisfy $\mathcal U(\rho,\alpha)<1$, then the full linearized registration ADMM/oADMM iteration converges linearly with asymptotic factor at most $\mathcal U(\rho,\alpha)$.
 \end{corollary}
 
-\section{Signed Enclosures with the Exact Regularizer}
+\subsection{Signed enclosures with the exact regularizer}
 We now retain $G=G_0\otimes I_d$ exactly.  Write $C_G=K_\rho\otimes I_d$ and $C_H=\operatorname{diag}(C_1,\ldots,C_n)$, where each $C_i=(H_i-\rho I)(H_i+\rho I)^{-1}$ is an explicit symmetric $d\times d$ block.  Consequently
 \[
 (C_HC_G)_{ij}=(K_\rho)_{ij}C_i.
@@ -504,7 +495,7 @@ and $[H,G]_{ij}=G_{ij}(H_i-H_j)$.  This proves that nonnormality is controlled b
 
 For the rank-one model, a block rotation $R_i$ aligned with $q_i$ diagonalizes $H_i$ exactly.  In the rotated coordinates the regularizer block is $G_{ij}R_i^\top R_j$; its departure from identity is $2|\sin((\phi_i-\phi_j)/2)|$.  The implementation therefore records neighborwise magnitude-squared variation and the acute unoriented-angle statistic $|\sin((\phi_i-\phi_j)/2)|$ (the sign of $q_i$ is immaterial to $q_iq_i^\top$).  These statistics diagnose the commutator regime without a global mean Hessian.
 
-\section{Search-Free Parameter Selection}
+\section{Finite Four-Corner Parameter Selection}
 We use ``search-free'' to mean that no grid search, gradient descent in $(\rho,\alpha)$, repeated ADMM trial, or repeated full iteration-matrix eigensolve is performed. The practical method extracts curvature and symbol endpoints once, generates a finite algebraic candidate set, and evaluates the constant-model predictor envelope; any certificate is evaluated separately at the selected pair.
 
 \subsection{Globally joint constant-gradient selector}
@@ -639,7 +630,7 @@ is recovered. The perturbation term may instead favor a smaller relaxation.
 \end{minipage}}
 \end{center}
 
-\section{Implementation Details}
+\section{Registration Implementation and Experimental Protocol}
 \subsection{Patch construction}
 Candidate patch strategies include fixed cubic patches, multiresolution patches matched to the registration pyramid, and adaptive patches split where gradient magnitude or orientation varies beyond a threshold. A robust representative $\bar q_r$ can be obtained from the spatial median of gradients. Because $H$ is block diagonal,
 \[
@@ -678,7 +669,7 @@ finest experimental grid and reuses them at every outer iteration and pyramid le
 baselines share initialization, objective, stopping tolerances, line search,
 pyramid, and topology safeguards.
 
-\section{Reproducible Experiments and Results}
+\section{Results}
 The experiments follow the logic of the method rather than a catalogue of
 implementations.  We first verify the exact algebra where a full spectrum is
 available.  We then ask what changes when gradients vary: the original global
@@ -712,7 +703,7 @@ $n$ & Direct radius & $|U_{\rm LFA}-\rho(T)|$ & Selection (ms)\\
 \end{tabular}
 \end{table}
 
-\subsection{What the first certificate gets wrong}
+\subsection{Global perturbation diagnostic}
 The first idea was to minimize the global additive perturbation certificate.
 It is rigorous, but it confuses parameter prediction with worst-case
 certification: on the 18 controlled fields (grid sides 4/5, magnitude contrasts
@@ -742,7 +733,7 @@ Comparison rectangle & 0.595 & 0.386 & 0\\
 \end{tabular}
 \end{table}
 
-\subsection{Predict first; certify second}
+\subsection{Optional rate-certificate diagnostic}
 We next separated periodic magnitude variation, smooth orientation variation, a
 sharp orientation interface, and Gaussian-smoothed image gradients on $3\times3$
 grids (ten cases, nine smooth).  The four-corner predictor achieved a median
@@ -887,17 +878,13 @@ the recommended policy.
 
 \begin{table}[ht]
 \centering
+\small
 \caption{FIRE, 134 pairs at $256^2$; identical initialization and solver protocol.}
 \begin{tabular}{lrrrr}
 \toprule
 Method & Iterations & Total time (s) & TRE (px) & TRE/diagonal (\%)\\
 \midrule
-External fixed $(0.1,1)$ & 412.0 & 6.680 & 5.50178 & 1.51967\\
-Residual balancing & 1434.0 & 22.325 & 5.50211 & 1.51976\\
-BB adaptive proxy & 623.5 & 9.435 & 5.50175 & 1.51966\\
-Fixed oADMM $(1,1.8)$ & 1529.5 & 23.471 & 5.50194 & 1.51971\\
-Four-corner, one shot & 245.0 & 4.774 & 5.50177 & 1.51966\\
-\bottomrule
+\input{generated/fire256_table.tex}%
 \end{tabular}
 \end{table}
 
@@ -907,10 +894,10 @@ method medians.
 
 \begin{figure}[H]
 \centering\includegraphics[width=.98\linewidth]{../figures/fire256_headline.pdf}
-\caption{FIRE 256 paired analysis against the strongest practical baseline (the externally validation-selected fixed pair). Runtime and iteration improvements remain positive across groups; TRE changes are numerically negligible, and the predicted penalties vary by pair.}
+\caption{FIRE benchmark at $256\times256$ ($n=134$). (a) Pairwise total-runtime reduction of one-shot four-corner tuning relative to the externally validation-selected fixed pair, stratified by A/P/S group. (b) Corresponding inner-iteration reduction. (c) Landmark TRE for the two methods; the identity line indicates unchanged accuracy. (d) The predicted penalty varies with maximum data curvature, demonstrating image-dependent tuning. Percentage reductions are computed per pair before group summaries.}
 \end{figure}
 
-\subsection{Decision-gate consequence}
+\subsection{One-shot reuse ablation}
 The four-corner predictor passes the predeclared iteration, total-runtime,
 accuracy, overhead, noncollapse, and topology gates on the CIMA sample.  The
 certificate fails the practical cost/tightness gate and is therefore excluded
@@ -920,13 +907,13 @@ runtime, accuracy, overhead, noncollapse, and topology gates.  Broader
 multi-resolution and adaptive-baseline comparisons remain necessary.
 
 \section{Discussion}
-\subsection{What is guaranteed}
+\subsection{Convergence, prediction, and certification}
 The constant-gradient joint optimum is contained in a finite algebraic candidate set.  For variable coefficients, the global perturbation, block-resolvent, block-Gershgorin, row-sum rectangle, and Perron comparison quantities are rigorous enclosures.  Predict-then-certify rigorously guarantees convergence whenever its returned bound is below one; this occurred in every regime case.  The predictor alone is not claimed to be an enclosure.
 
-\subsection{What is not claimed}
+\subsection{Interpretation and limitations}
 Outside the constant-gradient setting, selected parameters are not claimed to minimize the exact full spectral radius.  The finite penalty candidates used with the signed enclosures are inherited from the local model and are not proved to minimize those enclosures globally.  Most importantly, the empirically successful four-corner rule is predictive rather than rigorous when orientations vary.
 
-\subsection{Novelty after comparison with Song et al.}
+\subsection{Relation to adaptive and spectral tuning}
 Song et al. numerically reduce the general LQP spectral objective to penalty optimization and give a relaxation formula.  Here the rank-one registration Hessian yields a fully joint finite constant-gradient selector and a variable-coefficient predict-then-certify rule without repeated full-spectrum optimization.  On CIMA, an exact numerical optimizer on $8\times8$ variable-coefficient surrogates incurred more tuning cost and transferred less effectively than the four-corner rule.  Full-resolution Song optimization remains computationally out of scope, so the experiment is explicitly a coarse-surrogate diagnostic.
 
 \subsection{Limitations}
