@@ -23,6 +23,15 @@ paper/*.out
 paper/*.run.xml
 paper/*.synctex.gz
 
+# Local LaTeX build intermediates for the journal submission bundle
+submission/JMIV/main/*.aux
+submission/JMIV/main/*.log
+submission/JMIV/main/*.out
+submission/JMIV/supplement/*.aux
+submission/JMIV/supplement/*.log
+submission/JMIV/cover_letter/*.aux
+submission/JMIV/cover_letter/*.log
+
 # Temporary and intermediate research files
 tmp/
 temp/

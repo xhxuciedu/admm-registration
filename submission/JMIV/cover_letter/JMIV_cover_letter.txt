@@ -1,0 +1,12 @@
+Dear Editors,
+
+Please consider the enclosed Regular Paper, "Four-Corner Spectral Tuning for Search-Free ADMM in Diffeomorphic Image Registration," for publication in the Journal of Mathematical Imaging and Vision. The manuscript develops a registration-specific ADMM/oADMM parameter-selection method. Rank-one pixelwise data Hessians and a scalar regularizer reduce the constant-model spectral problem to four curvature--symbol corners, giving a finite algebraic predictor without numerical spectral search.
+
+On all 134 FIRE pairs at 256 by 256, the one-shot predictor reduced median pairwise runtime by 34.4% and inner iterations by 39.6% relative to an externally validation-selected fixed pair, with unchanged landmark error and no nonpositive discrete Jacobians. It was also faster than residual balancing, fixed oADMM, and a safeguarded BB proxy. A CIMA histology study independently showed a 20.1% matched-protocol runtime reduction.
+
+The work fits JMIV through its combination of operator-splitting analysis, variational registration, and reproducible imaging experiments. In contrast with the general numerical spectral optimization of Song et al., this method uses registration structure to avoid iterative spectral search. Detailed code, processed result tables, and data-preparation instructions accompany the manuscript.
+
+The author will complete the required submission-interface declarations concerning originality, exclusivity, author contributions, competing interests, and contact details.
+
+Sincerely,
+Xiaohui Xie

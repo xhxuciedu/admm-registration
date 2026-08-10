@@ -1,71 +1,19 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
-\usepackage{booktabs,array,multirow}
-\usepackage{caption}
-\usepackage{float}
-\usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage{microtype}
-\usepackage{hyperref}
-\usepackage{enumitem}
-\usepackage{fancyhdr}
-\usepackage{url}
-\usepackage{cleveref}
-
-\hypersetup{colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black}
-\captionsetup{font=small,labelfont=bf}
-\pagestyle{fancy}
-\fancyhf{}
-\lhead{Search-Free ADMM for Diffeomorphic Registration}
-\rhead{Anonymous submission}
-\cfoot{\thepage}
-\setlength{\headheight}{14pt}
-
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm,booktabs,array,multirow,float,graphicx,xcolor,microtype,hyperref,enumitem,url,cleveref}
 \newtheorem{theorem}{Theorem}[section]
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{assumption}[theorem]{Assumption}
-\theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{remark}[theorem]{Remark}
+\newtheorem{proposition}[theorem]{Proposition}\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{definition}\newtheorem{definition}[theorem]{Definition}\newtheorem{remark}[theorem]{Remark}
+\newcommand{\R}{\mathbb{R}}\newcommand{\I}{\mathbf{I}}\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\spec}{\operatorname{spec}}\newcommand{\spr}{\varrho}\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}\newcommand{\argmax}{\operatorname*{arg\,max}}\newcommand{\clip}{\operatorname{clip}}\newcommand{\cay}[2]{\mathcal{C}_{#1}(#2)}
+\title[Four-Corner Spectral Tuning]{Four-Corner Spectral Tuning for Search-Free ADMM in Diffeomorphic Image Registration}
+\author*[1]{\fnm{Xiaohui} \sur{Xie}}\email{xhx@uci.edu}
+\affil*[1]{\orgdiv{Department of Computer Science}, \orgname{University of California, Irvine}, \orgaddress{\city{Irvine}, \state{California}, \country{USA}}}
+\abstract{ADMM parameter choice strongly affects variational image-registration runtime. For a well-posed quadratic subproblem, every admissible penalty and relaxation is already contractive; the practical task is to select a rapidly convergent pair without numerical spectral search. The rank-one pixelwise registration Hessian and scalar Sobolev symbol reduce constant-model tuning exactly to four curvature--symbol corners, yielding a finite algebraic one-shot predictor. On 134 FIRE retinal pairs at 256 by 256, the predictor reduced median pairwise runtime by 34.4\% and inner iterations by 39.6\% relative to an externally validation-selected fixed pair, while landmark error and topology were unchanged. It was also 51.7\% faster than a safeguarded BB proxy. On ten CIMA histology pairs, matched-protocol runtime decreased by 20.1\%. Signed variable-coefficient enclosures provide optional rigorous rate bounds but are not used during tuning.}
+\keywords{alternating direction method of multipliers, diffeomorphic image registration, parameter selection, spectral analysis, local Fourier analysis}
+\begin{document}\maketitle
 
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\I}{\mathbf{I}}
-\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
-\newcommand{\spec}{\operatorname{spec}}
-\newcommand{\spr}{\varrho}
-\newcommand{\diag}{\operatorname{diag}}
-\newcommand{\argmin}{\operatorname*{arg\,min}}
-\newcommand{\argmax}{\operatorname*{arg\,max}}
-\newcommand{\clip}{\operatorname{clip}}
-\newcommand{\cay}[2]{\mathcal{C}_{#1}(#2)}
-
-\title{\textbf{Four-Corner Spectral Tuning for Search-Free ADMM in Diffeomorphic Image Registration}}
-\author{Anonymous Authors}
-\date{August 2026}
-
-\begin{document}
-\maketitle
-
-\begin{abstract}
-ADMM parameter choice strongly affects the runtime of variational image
-registration. For a well-posed quadratic subproblem, every admissible ADMM
-penalty and relaxation is already contractive; the practical task is therefore
-to select a rapidly convergent pair without numerical spectral search. The
-rank-one pixelwise registration Hessian and scalar Sobolev symbol reduce the
-constant-model tuning problem exactly to four curvature--symbol corners. A
-finite algebraic candidate set consequently yields one-shot joint tuning of
-$(\rho,\alpha)$. On 134 FIRE retinal pairs at $256\times256$, the predictor
-reduced median pairwise runtime by 34.4\% (95\% bootstrap CI 30.7--35.7\%) and
-inner iterations by 39.6\% relative to an externally validation-selected fixed
-pair; it was also 51.7\% faster than a safeguarded BB proxy. Landmark error and
-discrete-Jacobian statistics were unchanged. On ten CIMA histology pairs,
-matched-protocol runtime decreased by 20.1\%. Signed variable-coefficient
-enclosures provide optional rigorous rate bounds, but are conservative and are
-not part of the timed algorithm.
-\end{abstract}
 
 \section{Introduction}
 Diffeomorphic image registration estimates an invertible, topology-preserving spatial transformation that aligns a moving image with a fixed image. Classical methods remain attractive because they provide explicit control over the deformation model, regularization, and numerical stopping criteria, and because they can be applied without training data. Representative approaches include DARTEL, diffeomorphic demons, large-deformation optimal-control formulations, and modern GPU-accelerated variational solvers \cite{Ashburner2007,Vercauteren2009,MangBiros2015,Thorley2021}. Their main practical limitation is computational cost.
@@ -732,7 +680,7 @@ ten cases. Its median relative gap was 1.29, confirming validity but also the
 substantial conservatism that limits its use to diagnostic rate analysis.
 
 \begin{figure}[t]
-\centering\includegraphics[width=.98\linewidth]{../figures/algebraic_validation.pdf}
+\centering\includegraphics[width=.98\linewidth]{Fig1.pdf}
 \caption{Spectral validation. \textbf{Left:} the Fourier envelope is exact in constant-coefficient periodic systems. \textbf{Middle:} the four-corner predictor has a small spectral-radius gap in smooth variable-coefficient cases. \textbf{Right:} the signed rate certificate is rigorous but conservative.}
 \end{figure}
 
@@ -871,7 +819,12 @@ the recommended policy.
 \toprule
 Method & Iterations & Total time (s) & TRE (px) & TRE/diagonal (\%)\\
 \midrule
-\input{generated/fire256_table.tex}%
+Validation-selected fixed (0.1, 1.0) & 412.0 & 6.680 & 5.50178 & 1.51967\\
+Residual balancing & 1434.0 & 22.325 & 5.50211 & 1.51976\\
+BB adaptive proxy & 623.5 & 9.435 & 5.50175 & 1.51966\\
+Fixed oADMM (1.0, 1.8) & 1529.5 & 23.471 & 5.50194 & 1.51971\\
+\textbf{Four-corner one-shot} & 245.0 & 4.774 & 5.50177 & 1.51966\\
+\bottomrule%
 \end{tabular}
 \end{table}
 
@@ -880,7 +833,7 @@ therefore need not equal percentage differences between separately reported
 method medians.
 
 \begin{figure}[H]
-\centering\includegraphics[width=.98\linewidth]{../figures/fire256_headline.pdf}
+\centering\includegraphics[width=.98\linewidth]{Fig2.pdf}
 \caption{FIRE benchmark at $256\times256$ ($n=134$). (a) Pairwise total-runtime reduction of one-shot four-corner tuning relative to the externally validation-selected fixed pair, stratified by A/P/S group. (b) Corresponding inner-iteration reduction. (c) Landmark TRE for the two methods; the identity line indicates unchanged accuracy. (d) The predicted penalty varies with maximum data curvature, demonstrating image-dependent tuning. Percentage reductions are computed per pair before group summaries.}
 \end{figure}
 
@@ -1111,5 +1064,6 @@ Z. Xu, M. A. T. Figueiredo, and T. Goldstein,
 ``Adaptive ADMM with spectral penalty parameter selection,''
 in \emph{Proceedings of AISTATS}, PMLR 54, pp. 718--727, 2017.
 \end{thebibliography}
+
 
 \end{document}
