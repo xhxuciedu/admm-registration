@@ -1,50 +1,135 @@
 # Research log
 
-## 2026-08-06: setup and audit
+This file records both successful and failed work. Dates use America/Los_Angeles.
 
-- Read the supplied prompt and 740-line manuscript. The repository contained no code or data.
-- Recorded starting Git commit `d5e7664` (`init`).
-- Created `.venv` with Python 3.10 and installed the pinned-range scientific stack from `requirements.txt`.
-- Fixed random seed at 20260806 and set the controlled usefulness gate to median relative spectral-radius gap below 0.10 before running it.
-- Reviewed primary-source records for Boyd et al., Ghadimi et al., Teixeira et al., Giselsson--Boyd, Xu--Figueiredo--Goldstein, Wohlberg, Song et al., and Thorley et al. The closest novelty conflict is Song et al. 2024: they numerically optimize the LQP penalty spectrum and derive relaxation conditional on it; the proposed distinction is registration-specific LFA plus a finite certified envelope.
+## 2026-08-06: audit and reproduction
 
-## Algebra and implementation
+- Started branch `real-registration-validation` at commit
+  `3dc78db3013b9ab2eed80f00b04d4455bc809a55`.
+- Reproduced the existing test suite and inspected all existing raw result files.
+- Confirmed that the prior manuscript contained no real-registration experiment;
+  its numerical claims remain explicitly synthetic.
 
-- Derived the homogeneous `[w,u]` state map for `z = alpha*v + (1-alpha)*w`, followed by the `w` and scaled-dual updates.
-- Verified numerically that its nonzero spectrum equals that of `(1-alpha/2)I + (alpha/2) C_H C_G` for random noncommuting SPD matrices and `alpha` in `{0.5,1,1.7,2}`.
-- Verified the commuting frozen symbol and the curvature-corner reduction. The absolute value is convex in the scalar modal value, so zero crossings do not invalidate the corner argument.
-- Verified the Cayley resolvent identity and the norm certificate on 50 random noncommuting perturbations. No violation was found.
-- Implemented finite algebraic penalty candidates: endpoints, pairwise rational-branch intersections, and verified real roots of `rho^2 s(rho^2-hg)-delta D(rho)^2`. During review, an initially coded spurious `2hg*rho` term in the derivative was caught, removed, and all tests/experiments were rerun.
-- Implemented relaxation candidates as every vertex of the upper envelope of signed affine modal branches. Checked penalty and relaxation candidate minima against dense diagnostic grids.
+## 2026-08-06: four-corner reduction
 
-## Experiments and failed hypothesis
+- Proved that rank-one registration requires only the rectangle
+  `{nu, nu + mu max_i |q_i|^2} x {g_min, g_max}` for the global predictor.
+- Compared the four-branch and pixel-curvature finite selectors on 10,000
+  randomized configurations, including nullspaces and first/second-order
+  symbols: 10,000 exact parameter matches and zero failures.
+- The four-branch selector took about 31--35 ms from 64 to 1,048,576 pixels.
+  The legacy selector took 34, 144, 785, and 5,404 ms for 2, 4, 8, and 16
+  distinct curvature branches, respectively. A 32-branch timing attempt was
+  stopped after it exceeded the useful benchmark budget; no result is reported.
 
-- Constant periodic grids `n={4,6,8}`: selected `(rho,alpha)=(0.5435121023541,1.8981520704591)`; local-vs-direct radius absolute errors were `0`, `9.99e-16`, and `5.00e-16`.
-- First controlled run compared against penalty optimization at the already selected alpha. This produced a tiny but scientifically meaningless gap because the certified joint selector had collapsed to `alpha=1e-6`. The statistic was rejected and replaced by genuinely joint full-spectrum diagnostic optimization.
-- Final controlled experiment: 18 cases spanning grid sizes 4/5, magnitude contrasts 1/4/16, and orientation frequencies 0/1/3. The certificate had zero violations.
-- Negative result: every certified joint selection chose `rho=100` and `alpha=1e-6`, with spectral radius approximately one. Median/mean/max relative gaps to joint spectral optimization were 2.904/2.839/4.505. The predeclared 0.10 gate failed.
-- Per protocol, real subproblem and end-to-end 2D/3D experiments were not run. No public dataset, Dice, TRE, Jacobian, runtime, or GPU claim is made.
+## 2026-08-06: oracle and registration implementation
 
-## Manuscript decision
+- Added independent dense and matrix-free reduced operators and conditional
+  relaxation minimization. Dense/matrix-free equivalence is covered by tests.
+- Added a CPU multiresolution 2D registration reference pipeline with FFT ADMM,
+  over-relaxation, composition, and a positive-Jacobian line-search safeguard.
+- A first public-sample experiment was deliberately discarded before results
+  were saved: its manual baseline was hard-coded rather than validation-selected,
+  and its reported displacement error used `-u` as an approximate inverse.
+  The corrected protocol uses validation cases 1--2, held-out cases 3--5, and a
+  fixed-point inverse field for inverse-consistent known-warp construction.
+- The current `adaptive_bb_proxy` is a safeguarded BB penalty heuristic. It is
+  not the full Xu et al. adaptive spectral ADMM and must not be labelled as such.
+- A first attempt at five-repeat registration timing overlapped with the 128^2
+  Arnoldi certificate process. It was interrupted during repetition 1 and no
+  result file was written. The clean timing study was restarted with no
+  compute-intensive experiment running concurrently.
+- In the clean study (five repetitions, six held-out image/deformation pairs,
+  alternating method order), full-resolution one-shot prediction reduced median
+  iterations by 44.4% and paired total time by 41.7% versus the validation-
+  selected global pair. The bootstrap 95% interval for time reduction was
+  [40.9%, 42.6%], tuning was 1.58% of proposed runtime, median relative MSE
+  change was -0.0068%, and no case folded. These are controlled known warps on
+  two public images; they are not FIRE/ANHIR benchmark results.
+- Coarse-level one-shot reuse met the overhead gate but missed the paired runtime
+  gate. Per-level reuse met the runtime gate but missed the overhead gate. The
+  full-resolution one-shot statistic is therefore a tested methodological
+  improvement, not a relabelling of the earlier reuse policy.
 
-- Reframed the paper as a negative-results report. Retained the verified algebra and certificate, removed all placeholders, and explicitly reported why the certificate is not presently a useful tuner.
-- Recommended next direction: interface-local or weighted resolvent bounds, followed by rerunning Gate 2 before any medical-data study.
+## 2026-08-06: public data acquisition
 
-## 2026-08-06: signed structured-envelope phase
+- Prepared two reproducible public sample images distributed by scikit-image:
+  a CC0 retina and an unrestricted immunohistochemistry image. These constitute
+  realistic image content with controlled known deformations, not benchmark
+  landmark datasets.
+- An earlier FIRE transfer was incomplete, but the user subsequently supplied a
+  complete `data/downloads/FIRE.7z`. On 2026-08-06, `7z l` verified 405 entries
+  (268 images and 134 control-point files) and extraction to `data/raw/fire/FIRE`
+  completed. The earlier "not acquired" status was superseded.
+- Added resumable FIRE preparation and landmark-evaluation scripts. A 128x128
+  phase-initialized pilot completed one pair from each A/P/S stratum. Predictor
+  versus the external fixed pair had essentially identical median TRE: A01
+  2.718/2.718 px, P01 21.252/21.252 px, and S01 7.157/7.248 px; its inner
+  iteration counts were 244/429, 224/472, and 259/345, respectively. This is a
+  three-pair pilot only, not a paper-level FIRE result. The full 256x256 protocol
+  remains the prescribed run for an unconstrained benchmark machine.
+- Completed the controlled full FIRE 128x128 CPU run: all 134 supplied
+  landmarked pairs (14 A, 49 P, 71 S), with identical phase initialization, two
+  methods, and one BLAS/OMP thread. The four-corner predictor reduced paired
+  median total runtime by 33.6% (bootstrap 95% CI 32.5%--34.7%), solver time by
+  33.7%, and iterations by 40.7% versus the external fixed pair $(0.1,1)$.
+  Median TRE changed by -1.1e-5 px (2.85282 vs 2.85284 px); 27 individual pairs
+  were infinitesimally worse in TRE, no subproblem failed, and no final field
+  had a nonpositive Jacobian. Raw CSV and derived JSON are retained.
+- Began a complete default/over-relaxed/residual/BB FIRE sweep under the same
+  protocol. Default-parameter hard cases repeatedly reached the prescribed
+  inner-iteration cap, making the all-pair sweep disproportionate to its added
+  evidentiary value. It was stopped with separately preserved partial shards
+  and is not used in any table, figure, or claim. CIMA remains the full
+  multi-baseline comparison; FIRE's complete claim is explicitly limited to the
+  external fixed comparator.
+- ANHIR download requires an authenticated challenge account and is therefore
+  documented but not silently substituted with inaccessible data.
 
-- Kept the global certificate as a baseline and retained the exact global regularizer in every new method.
-- Implemented the exact pixel-block Cayley mismatch. On the original 18 cases its median enclosure gap improved to 0.166, but its median parameter gap was 0.926 and 6/18 selections still collapsed.
-- Proved and implemented block-Gershgorin disks using exact $C_i$ blocks and exact scalar $K_\rho$. All 18 certificates held; no selection collapsed. Median enclosure and parameter gaps were 0.644 and 0.560.
-- Derived the local symmetric/skew blocks $S_{ij}=k_{ij}(C_i+C_j)/2$ and $Q_{ij}=k_{ij}(C_i-C_j)/2$. Hermitian block-Gershgorin plus the symmetric block-norm row sum gives the rectangle certificate. The skew radius is zero for constant Hessians. All numerical certificate tests passed; median parameter gap improved to 0.431 without collapse.
-- Derived and tested $\|[C_H,C_G]\|\le4\rho^2\|[H,G]\|/((h_{\min}+\rho)^2(g_{\min}+\rho)^2)$ from the inverse commutator identity. Tests compare against the explicit Cayley commutator.
-- Completed the joint constant-gradient theorem. Eliminating fixed-$\rho$ relaxation produces $(b-a)/(2-a-b)$ or $2b-1$; branch intersections, $a+b=1$ transitions, stationary polynomial roots, and endpoints form a finite candidate superset. A 2D dense diagnostic test agrees with the finite result.
-- Ran ten separated regimes (magnitude, orientation, discontinuity, and Gaussian-smoothed image gradients). The exact pixel-curvature predictor, which is not certified under rotation, achieved median parameter gap 0.057 overall and 0.027 over nine smooth cases, with no collapse. A strengthened multistart full-spectrum oracle was used after a low-budget differential-evolution oracle was found suboptimal.
-- Gates: exact algebra passes; the pixel-curvature predictor passes empirical parameter quality and robustness; none of the rigorous variable-coefficient enclosures passes both tightness and parameter-quality gates. Real-data experiments therefore remain gated.
+## 2026-08-06: scalable certification
 
-## 2026-08-06: Perron comparison and predict-then-certify
+- Implemented a sparse truncated periodic Cayley-kernel comparison rectangle.
+  The omitted convolution is bounded by its kernel l1 tail. Tests cover the
+  zero-commutator case and validate enclosure against the dense reduced spectrum.
+- Certification scaling/tightness measurements are stored only after completion;
+  an absent result file means the run did not complete and must not be cited.
+- Twenty radius/size cases through 64x64 had zero enclosure violations. Bounds
+  were 0.638--0.681 for actual radii near 0.269, giving relative gaps of
+  1.38--1.54. The most expensive 64x64 retained-radius case took 81.4 s. A
+  relaxed 128x128 Arnoldi/certificate attempt did not complete within the
+  allocated diagnostic window and was interrupted without a result file.
+  Therefore the present certificate is a small-problem diagnostic, not a
+  practical registration-time component; the predictor is the scalable method.
 
-- Replaced maximum block row sums by scalar comparison matrices using $\lambda_{\min}(\operatorname{diag}(d^-)-B^S)$, $\lambda_{\max}(\operatorname{diag}(d^+)+B^S)$, and the Perron root of $B^Q$. Tests verify rigor and dominance over row sums.
-- On the 18-case stress set, the comparison rectangle improved median parameter gap from 0.431 to 0.386, with zero violations and zero collapses.
-- Introduced predict-then-certify: pixel curvatures select parameters; the comparison rectangle is evaluated once as an accept/reject certificate. This prevents a loose certificate from corrupting a good minimizer.
-- In all ten regime cases the rigorous returned bound was below one. Median parameter gaps were 0.057 overall and 0.027 on smooth fields, with no collapse. Median relative certificate gap was 1.29, so tightness remains the limitation.
-- A deterministic angular numerical-radius certificate with an explicit Lipschitz remainder was rigorous but looser in this study; it remains in code as a documented negative refinement.
+## 2026-08-06: CIMA landmark benchmark
+
+- Acquired the archived public `Borda/dataset-histology-landmarks` repository at
+  commit `8413e09e1e53b0e6fc101ae9d7b760c47cc20c77`. Its committed sample has
+  five differently stained lung-lesion-3 images and manual annotations, giving
+  ten unordered landmark pairs.
+- A phase-only initial run succeeded on two pairs but failed catastrophically on
+  others. A robust image-only initializer was developed from bounded phase,
+  centroid, and clustered SIFT proposals selected by structural-channel NCC.
+  Landmarks were never used for initialization or parameter tuning.
+- Full-resolution SIFT initialization was correct but consumed about 2.1 s and
+  hid solver speedups. Running the identical initialization at 128x128 reduced
+  it to about 0.4 s and improved several difficult pairs. Both raw protocols are
+  preserved.
+- The first full CIMA run exposed folding introduced during pyramid upsampling.
+  Those raw results are preserved as `cima_landmarks_folded_baseline.csv` and
+  `cima_repeated_timing_folded.csv`. A shared safeguard now damps only the
+  non-translational field after interpolation until the Jacobian floor holds.
+- The final protocol has zero global/interior folding cases. Over five repeated
+  timings and 50 paired runs, one-shot prediction reduced total runtime 20.1%
+  (bootstrap 95% CI 19.4%--20.7%), solver time 23.5%, and iterations 30.1%
+  versus the external fixed pair. Tuning used 1.16% of runtime. Median TRE was
+  7.33 px (2.02% diagonal), unchanged between methods; median landmark
+  improvement was 36.5%. One pair remained above 22 px TRE.
+- An exact numerical spectral optimizer on 8x8 variable-coefficient surrogates
+  used a median 97 objective evaluations and 2.18 s tuning. Its transferred full
+  solve used 251 median iterations and 4.39 s total versus 210 and 2.02 s for
+  the four-corner predictor. This is recorded as a coarse Song-style diagnostic,
+  not full-resolution Song optimization.
+- FIRE remained incomplete after repeated official-server disconnects. A later
+  wget resume request was blocked by the execution-service download quota. No
+  partial archive or retinal number enters the paper.
