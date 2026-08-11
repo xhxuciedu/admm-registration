@@ -147,12 +147,13 @@ The contributions are:
 Cartesian-product joint modal spectrum.
 \item A finite algebraic joint selection of $\rho$ and $\alpha$ that eliminates
 grid-based or iterative penalty search for this structured model.
-\item A registration specialization based on local coefficient freezing and
-the rank-one optical-flow Hessian, reducing the data-term information required
-for tuning to endpoint curvatures.
+\item A registration specialization based on globally coefficient-frozen
+surrogates indexed by the local optical-flow Hessian blocks and the rank-one
+Hessian structure, reducing the data-term information required for tuning to
+endpoint curvatures.
 \item Experimental evidence that the surrogate-optimal parameters transfer to
 noncommuting registration systems, reducing iterations and runtime while
-maintaining landmark accuracy and observed topology.
+maintaining landmark accuracy with no observed nonpositive discrete Jacobians.
 \end{enumerate}
 
 \section{Related Work}\label{sec:related}
@@ -511,10 +512,9 @@ globally coefficient-frozen surrogate
 \widetilde H^{(B)}=I_n\otimes B,\qquad
 \widetilde G=G_0\otimes I_d=G.
 \]
-The same block $B$ is used at every spatial location; this construction is not
-a one-pixel spatial problem. The tensor factors commute, so the surrogate is
-simultaneously diagonalizable. If $Bz_j=h_jz_j$ and
-$G_0\phi_\xi=g(\xi)\phi_\xi$, its common modes are
+The same block $B$ is repeated at every spatial location. The tensor factors
+commute, so the surrogate is simultaneously diagonalizable. If $Bz_j=h_jz_j$
+and $G_0\phi_\xi=g(\xi)\phi_\xi$, its common modes are
 $\phi_\xi\otimes z_j$, with exact modal factors
 $e(h_j,g(\xi);\rho,\alpha)$.
 
@@ -543,8 +543,8 @@ branches.
 Rigorous noncommuting bounds may be evaluated after tuning. For example, for
 any reference block $B$, let
 $\delta_H=\norm{H-\widetilde H^{(B)}}_2$ and let
-$U_B(\rho,\alpha)$ denote the exact modal factor of that globally frozen
-surrogate. The Cayley resolvent identity gives
+$U_B(\rho,\alpha)$ denote the exact worst-mode contraction factor of that
+globally frozen surrogate. The Cayley resolvent identity gives
 \begin{equation}
 R_{\rm true}(\rho,\alpha)
 \le U_B(\rho,\alpha)+\frac{\alpha}{\rho}\delta_H.
@@ -661,19 +661,12 @@ $\nu+\gamma>0$ excludes their common null mode, and
 Theorem~\ref{thm:finite} gives the stated global minimizer.
 \end{proof}
 
-% \begin{remark}
-The four-corner reduction is exact for the separable commuting surrogate; the
-resulting parameter pair is therefore globally optimal over
-$\mathcal I\times(0,2]$ for that surrogate, but serves as a predictor of the
-optimal parameters for the full variable-coefficient registration iteration.
-% \end{remark}
-% In general, the selected pair need not belong to
-% \[
-% \argmin_{\rho\in\mathcal I,\ 0<\alpha\le2}
-% R_{\rm true}(\rho,\alpha).
-% \]
-% The predictor ignores global orientation interactions between spatially varying
-% rank-one blocks; the experiments assess its practical transfer.
+\begin{remark}
+The four-corner reduction is exact for the frozen separable surrogate family;
+the resulting parameter pair is therefore globally optimal for the family
+objective over $\mathcal I\times(0,2]$, but serves as a predictor for the full
+variable-coefficient registration iteration.
+\end{remark}
 
 \subsection{One-shot deployment policy}
 \begin{center}
@@ -688,8 +681,9 @@ $h_-=\nu$ and $h_+=\nu+\mu\max_i\norm{q_i}^2$.
 \item Compute $g_-$ and $g_+$ analytically from the regularizer and grid.
 \item Form the four endpoint pairs and deduplicate their rational branches
 $\theta_c(\rho)$.
-\item For every remaining branch pair, form the intersection, relaxation-
-transition, and stationary polynomials in Theorem~\ref{thm:finite}. Retain
+\item For every remaining branch pair, form the intersection,
+relaxation-transition, and stationary polynomials in
+Theorem~\ref{thm:finite}. Retain
 their positive real roots in $\mathcal I$, merge repeated roots, and add the
 endpoints of $\mathcal I$.
 \item At each candidate compute $a(\rho)$, $b(\rho)$, and
@@ -774,8 +768,9 @@ $(\rho_{\rm 4C},\alpha_{\rm 4C})$. It does not measure agreement of the two
 objectives over the parameter domain. Certificate experiments additionally
 use the enclosure gap $(U-R_{\rm act})/R_{\rm act}$.
 
-The real-image pilot uses a public-domain retinal image and an unrestricted
-immunohistochemistry image under held-out smooth known deformations. CIMA uses
+The validation set used for fixed-parameter selection comprises a
+public-domain retinal image and an unrestricted immunohistochemistry image
+with smooth known deformations (cases 1--2). CIMA uses
 the five differently stained sections of the public lung-lesion-3 sample and
 all ten unordered pairs \cite{Borovec2018}, resized to $256^2$ after a common
 structural-channel preprocessing. FIRE uses all 134 landmarked pairs (14 A, 49
@@ -1037,8 +1032,8 @@ relaxation and a finite algebraic penalty candidate set then replace iterative
 spectral parameter search. For variable-coefficient registration, local
 coefficient blocks and the rank-one optical-flow Hessian define a family of
 globally frozen separable surrogates, turning this result into an inexpensive
-predictor. FIRE and CIMA experiments show reduced iterations and
-runtime with essentially unchanged landmark accuracy and observed topology.
+predictor. FIRE and CIMA experiments show reduced iterations and runtime while
+maintaining landmark accuracy with no observed nonpositive discrete Jacobians.
 Further work may address tighter noncommuting analysis, volumetric
 registration, and related splitting methods.
 
