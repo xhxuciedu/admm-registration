@@ -14,7 +14,7 @@ SNAPP. Only the final portal actions and permissions check remain open.
   and edited the manuscript.”
 - [x] Competing interests: “The authors declare no competing interests.”
 - [x] Funding: no specific funding.
-- [x] Public code URL: https://github.com/xhxuciedu/admm-registration
+- [x] Public code URL: https://github.com/xhxuciedu/admm
 - [x] Reviewer suggestions: none.
 - [x] Prior conference paper: none.
 - [x] Final author, affiliation, e-mail, title, abstract, and keyword spelling

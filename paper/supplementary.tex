@@ -436,8 +436,11 @@ $q_i\mapsto-q_i$. For the controlled study, we additionally compute
 \[
 \chi=\frac{\norm{HG-GH}_2}{\norm H_2\norm G_2}.
 \]
-Across the ten cases, $\chi$ ranges from $0.012$ to $0.239$ and has a
-descriptive Pearson correlation of $0.87$ with spectral-radius regret.
+Across the ten cases, $\chi$ ranges from $0.012$ to $0.239$. Larger
+normalized commutators were generally associated with larger oracle regret;
+the descriptive Pearson correlation was $0.87$. These deterministic systems
+are designed diagnostics rather than a statistical sample and therefore do not
+establish a universal relationship.
 
 \section{Certificate experiments and scaling}\label{sec:certificate_results}
 \subsection{Structured enclosure comparison}
@@ -479,12 +482,32 @@ the exact values but are conservative.}
 \subsection{Controlled variable-coefficient predictor tests}
 The ten $3\times3$ cases comprise periodic magnitude-only variation,
 orientation-only variation, one $90^\circ$ orientation interface, and three
-random-gradient stress tests. The latter begin with one fixed periodic
-Gaussian white-noise field, apply Gaussian filters with
-$\sigma\in\{0.6,1.0,1.6\}$ pixels, differentiate, and rescale each gradient
-field to root-mean-square magnitude $0.4$. The filtering scale therefore
-describes the precursor scalar field, not monotone smoothness of the normalized
-rank-one Hessian. These cases vary gradient magnitude and orientation jointly.
+random-gradient stress tests. Let $x_{i,1}$ be the first grid coordinate,
+$s_i=\sin(2\pi x_{i,1}/3)$, and $e_1=(1,0)^\top$. The magnitude-only and
+orientation-only fields are
+\[
+q_i^{\rm mag}=0.4(1+a s_i)e_1,\qquad
+q_i^{\rm ori}=0.4
+\begin{bmatrix}\cos(a s_i)&\sin(a s_i)\end{bmatrix}^{\!\top},
+\]
+with $a\in\{0.05,0.2,0.5\}$ and
+$a\in\{0.05,0.2,0.6\}$, respectively. The interface field has magnitude $0.4$
+and a $90^\circ$ orientation jump.
+
+The random-gradient cases begin with one fixed periodic Gaussian white-noise
+field $z$, apply Gaussian filters $K_\sigma$ with
+$\sigma\in\{0.6,1.0,1.6\}$ pixels, differentiate, and rescale:
+\[
+q_i^{\rm rnd}=c_\sigma\nabla(K_\sigma*z)_i,\qquad
+\left(\frac1N\sum_i\norm{q_i^{\rm rnd}}_2^2\right)^{1/2}=0.4,
+\qquad N=9.
+\]
+The filtering scale describes the precursor scalar field, not monotone
+smoothness of the normalized rank-one Hessian. These cases vary gradient
+magnitude and orientation jointly. Every case uses
+$H_i=0.05I_2+q_iq_i^\top$, the same periodic regularizer with
+$(\beta,\gamma)=(0.2,0.1)$, and
+$\mathcal I=[10^{-2},10^2]$.
 
 The four-corner predictor attained median spectral-radius regret $0.057$ over
 all cases, with no collapse. Regret was $0.003$--$0.087$ for the
@@ -494,8 +517,11 @@ normalized commutators were respectively $0.012$--$0.139$, $0.166$, and
 $0.171$--$0.239$. At the selected parameters, the median absolute
 relative discrepancy between the four-corner envelope and the true radius was
 $1.4\times10^{-15}$, with maximum $2.8\times10^{-3}$. The latter is a
-pointwise comparison and does not imply that the surrogate and true spectral
-objectives have the same minimizer. The Perron comparison certificate was
+pointwise comparison at $(\rho_{\rm 4C},\alpha_{\rm 4C})$, not a comparison of
+the objectives over the parameter domain. It is therefore compatible with
+nonzero oracle regret: the oracle can attain a smaller true radius at another
+pair even when the two radii agree closely at the selected pair. The Perron
+comparison certificate was
 below one in all ten cases. Its median enclosure gap was $1.29$, establishing
 validity while illustrating conservatism.
 
@@ -513,8 +539,8 @@ certificates.
 
 \subsection{Additional algebraic verification}
 Ten thousand randomized curvature configurations were used to compare explicit
-pixelwise curvature enumeration with the four-corner envelope. No discrepancy
-was observed. Constant-coefficient periodic systems matched the full reduced
+enumeration of attained modal curvature pairs with the four-corner envelope.
+No discrepancy was observed. Constant-coefficient periodic systems matched the full reduced
 spectral radius to numerical precision. These tests validate the implementation
 of the separable theorem; they do not turn the variable-coefficient predictor
 into an exact global spectral method.
@@ -531,19 +557,22 @@ displacement is halved until the check passes. This numerical safeguard does
 not constitute a global diffeomorphism theorem.
 
 \subsection{Baselines}
-The external fixed comparator $(\rho,\alpha)=(0.1,1.0)$ was selected using the
-controlled public-image pilot, not FIRE or CIMA, and was then frozen. Residual
-balancing starts at $\rho=1$, updates the penalty from primal and dual residual
-imbalance, and rescales the dual variable. The Barzilai--Borwein (BB)
-comparison is a safeguarded penalty proxy with clipping and periodic updates. Fixed
-oADMM uses $(1,1.8)$, while canonical fixed ADMM uses $(1,1)$. Exact update
-intervals and safeguards are implemented in
+The validation-selected fixed comparator $(\rho,\alpha)=(0.1, 1.0)$ was chosen
+from $\rho\in\{0.03,0.1,0.3,1,3\}$ and $\alpha\in\{1,1.8\}$ using
+known-deformation cases 1--2 from each of two separate public images. Candidate
+pairs within 1\% of the lowest median mean squared error were ranked by median
+inner iterations and then by median error. Neither FIRE nor CIMA was used in
+this selection. Residual balancing starts at $\rho=1$, updates the penalty from
+primal and dual residual imbalance, and rescales the dual variable. The
+Barzilai--Borwein (BB) comparison is a safeguarded penalty proxy with clipping
+and periodic updates. Fixed oADMM uses $(1, 1.8)$, while Fixed ADMM uses
+$(1, 1)$. Exact update intervals and safeguards are implemented in
 \texttt{src/registration2d.py}.
 
-\subsection{Patch and symbol construction}
-Optional certificate studies use fixed, multiresolution, or adaptively split
-patches. A representative $\bar q_r$ may be a center, mean, or robust spatial
-median, and
+\subsection{Certificate reference blocks and regularizer symbols}
+Optional certificate studies may freeze a representative local optical-flow
+block across space or partition the domain into larger spatial regions. A
+representative $\bar q_r$ may be a center, mean, or robust spatial median, and
 \[
 H_r=\nu I_d+\mu\bar q_r\bar q_r^\top.
 \]
@@ -571,8 +600,8 @@ g_+=\left(\gamma+\frac{4\beta d}{(\Delta x)^2}\right)^p.
 \subsection{Controlled real-content pilot}
 A public-domain retinal image and an unrestricted immunohistochemistry image
 were each subjected to five smooth known deformations. Cases 1--2 selected the
-single external fixed comparator; held-out cases 3--5 were not used for tuning and
-gave six image--deformation tests. Across five order-alternated repeats (30
+single validation-selected fixed comparator; held-out cases 3--5 were not used
+for tuning and gave six image--deformation tests. Across five order-alternated repeats (30
 paired runs), one-shot tuning reduced median inner
 iterations by 44.4\% and median total time by 41.7\% (bootstrap 95\% interval
 $[40.9,42.6]$\%). Selection consumed 1.58\% of proposed runtime, median
@@ -629,11 +658,13 @@ clustered scale-invariant feature transform (SIFT) proposals on a $128^2$
 image.
 
 \subsection{FIRE parameter summary}
-The audited FIRE result contains 134 pairs and five methods per pair. Percentage
+The FIRE result contains 134 pairs and five methods per pair. Percentage
 reductions are computed pairwise before aggregation. For one-shot four-corner
 tuning, median $\rho_{\rm 4C}=0.1008$ (interquartile range (IQR) $0.0397$,
 range $0.0688$--$0.1402$) and median $\alpha_{\rm 4C}=1.5699$ (IQR $0.1287$, range
-$1.4483$--$1.6883$). The median $h_+$ is $0.2249$.
+$1.4483$--$1.6883$). No selected $\rho_{\rm 4C}$ reached either endpoint of
+$[10^{-4},10^3]$, and no selected $\alpha_{\rm 4C}$ reached $2$. The median
+$h_+$ is $0.2249$.
 
 \subsection{One-shot reuse}
 On a balanced 18-pair FIRE subset, per-level retuning reduced median inner
@@ -643,9 +674,8 @@ Accordingly, all headline experiments use one-shot reuse. Retuning at every
 outer Gauss--Newton iteration was not tested separately.
 
 \section{Reproducibility and availability}
-The audited runs began at commit
-\texttt{3dc78db3013b9ab2eed80f00b04d4455bc809a55} on 6 August 2026 and used
-seed 20260806 and \texttt{configs/real2d\_v1.yaml}. The environment used
+The experiments used seed 20260806 and
+\texttt{configs/real2d\_v1.yaml}. The environment used
 Python 3.10.9, NumPy 2.2.6, SciPy 1.15.3, pandas 2.3.3,
 Matplotlib 3.10.9, and scikit-image 0.25.2 on two Intel Xeon Gold 5218 CPUs;
 the experiments were CPU-only. Timed registrations used one Basic Linear
@@ -662,6 +692,8 @@ images are not redistributed. Preparation scripts, integrity checks, all
 nonrestricted pair-level measurements, and the certificate implementations
 (\texttt{src/structured\_envelopes.py} and the corresponding
 \texttt{experiments/} scripts) are available at
-\url{https://github.com/xhxuciedu/admm-registration}.
+\url{https://github.com/xhxuciedu/admm}. The repository includes source code,
+tests, configurations, processed outputs, and preparation and evaluation
+scripts.
 
 \end{document}

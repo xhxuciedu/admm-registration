@@ -22,10 +22,10 @@ FIGURES = ROOT / "figures"
 PAPER = ROOT / "paper"
 METHODS = ["manual_external", "fixed_1_18", "residual_balance",
            "adaptive_bb_proxy", "predict_pair_full"]
-LABELS = {"manual_external": "Validation-selected fixed\n(0.1, 1.0)",
-          "fixed_1_18": "Fixed oADMM\n(1.0, 1.8)",
+LABELS = {"manual_external": "Validation-selected\nfixed comparator\n(0.1, 1.0)",
+          "fixed_1_18": "Fixed oADMM\n(1, 1.8)",
           "residual_balance": "Residual\nbalancing",
-          "adaptive_bb_proxy": "BB adaptive\nproxy",
+          "adaptive_bb_proxy": "BB proxy",
           "predict_pair_full": "Four-corner\none-shot"}
 COLORS = {"manual_external": "#7f7f7f", "fixed_1_18": "#b0b0b0",
           "residual_balance": "#c98b2e", "adaptive_bb_proxy": "#6b8e23",
@@ -118,7 +118,7 @@ def plot_headline(data: pd.DataFrame, strongest: str) -> None:
     ax[1, 0].axhline(0, color=".35", lw=.8)
     ax[1, 0].set(
         title="Landmark-accuracy difference",
-        ylabel=r"$\Delta$TRE: four-corner $-$ fixed (px)",
+        ylabel=r"$\Delta$TRE: 4C $-$ validation-selected fixed (px)",
     )
     for group, color in zip(groups,["#0072b2","#d55e00","#009e73"]):
         z=p[p.group==group]; ax[1,1].scatter(z.h_plus,z.rho_initial,s=18,alpha=.75,label=group,color=color,edgecolors="none")

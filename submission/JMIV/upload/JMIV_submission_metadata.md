@@ -17,7 +17,7 @@
 | Main manuscript | `upload/JMIV_main.pdf` |
 | Supplement | `upload/ESM_1_Supplementary_Information.pdf` (Online Resource 1) |
 | Source archive | `upload/JMIV_main_source.zip` |
-| Data/code statement | https://github.com/xhxuciedu/admm-registration |
+| Data/code statement | https://github.com/xhxuciedu/admm |
 | Funding | No specific funding. |
 | Competing interests | The authors declare no competing interests. |
 | Author contributions | Katherine Xie and Jie Wu conducted the research and wrote and edited the manuscript. Xiaohui Xie conceived the work and edited the manuscript. |
