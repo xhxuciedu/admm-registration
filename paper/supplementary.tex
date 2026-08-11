@@ -118,7 +118,7 @@ one,
 \end{aligned}
 \]
 Apply \eqref{eq:E}, the triangle inequality, and normality of the separable
-direct-sum operator, for which its operator norm equals $\Ulfa$. Any
+direct-sum operator, whose operator norm equals $\Ulfa$. Any
 cross-patch couplings removed from the regularizer are included in $\delta_G$.
 \end{proof}
 
@@ -129,8 +129,8 @@ than that value.
 \end{corollary}
 
 \subsection{Certificate-aware legacy objective}
-For standard ADMM, all scalar frozen-modal factors are nonnegative. A
-Let $\mathcal C$ denote the finite set of attained frozen-model curvature--symbol
+For standard ADMM, all scalar frozen-modal factors are nonnegative. Let
+$\mathcal C$ denote the finite set of attained frozen-model curvature--symbol
 corners. A certificate-aware diagnostic objective is therefore
 \begin{equation}
 \mathcal U_1(\rho)=
@@ -393,7 +393,7 @@ eigenvalues can be estimated matrix-free. The bound is rigorous at every
 radius, including zero; usefulness depends on tightness.
 
 \section{Commutator and orientation diagnostics}\label{sec:commutator}
-The resolvent identity also yields a direct commutator estimate.
+With $[A,B]=AB-BA$, the resolvent identity yields a direct commutator estimate.
 \begin{proposition}[Cayley commutator bound]
 \begin{equation}
 \norm{[C_H,C_G]}_2
@@ -410,10 +410,10 @@ $C_H=\Id-2\rho(H+\rho\Id)^{-1}$ and the identity
 \[
 [(H+\rho\Id)^{-1},(G+\rho\Id)^{-1}]
 =(H+\rho\Id)^{-1}(G+\rho\Id)^{-1}
-[H,G](G+\rho\Id)^{-1}(H+\rho\Id)^{-1},
+[H,G](G+\rho\Id)^{-1}(H+\rho\Id)^{-1}.
 \]
-up to the equivalent ordering convention for the commutator, and then bound
-the four resolvents by their smallest shifted eigenvalues.
+Multiplying by $4\rho^2$ and bounding the four resolvents by their smallest
+shifted eigenvalues proves \eqref{eq:commutator}.
 \end{proof}
 
 For registration,
@@ -428,11 +428,13 @@ between two rank-one Hessians is
 \[
 \norm{P_i-P_j}_2
 =\sqrt{1-(\widehat q_i^\top\widehat q_j)^2}
-=|\sin(\phi_i-\phi_j)|,
+=\sin\vartheta_{ij},
 \]
-where orientation angles are taken modulo $\pi$. This projector metric, unlike
-$|\sin((\phi_i-\phi_j)/2)|$, is invariant under either sign change
-$q_i\mapsto-q_i$. For the controlled study, we additionally compute
+where $\vartheta_{ij}\in[0,\pi/2]$ is the acute principal angle between the
+unoriented spans of $q_i$ and $q_j$. In two dimensions this is also
+$|\sin(\phi_i-\phi_j)|$, with orientation angles taken modulo $\pi$. The
+projector metric is invariant under either sign change $q_i\mapsto-q_i$. For
+the controlled study, we additionally compute
 \[
 \chi=\frac{\norm{HG-GH}_2}{\norm H_2\norm G_2}.
 \]

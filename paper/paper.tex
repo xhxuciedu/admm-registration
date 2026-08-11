@@ -58,9 +58,9 @@ parameter is optimized analytically for each penalty, and the remaining
 penalty problem reduces to a finite algebraically characterized superset of
 candidate minimizers. In this sense the method is search-free: it avoids
 grid-based or iterative numerical optimization over the penalty while still
-computing the required polynomial roots numerically. Full diffeomorphic image
-registration is spatially varying and noncommuting, so the exact theorem does
-not apply to the assembled operator. A family of globally coefficient-frozen
+computing the required polynomial roots numerically. The assembled
+diffeomorphic-registration operator is spatially varying and noncommuting, so
+the exact theorem does not apply to it. A family of globally coefficient-frozen
 surrogates indexed by the observed local optical-flow blocks, together with
 the rank-one Hessian structure, nevertheless yields an inexpensive predictor
 determined by the four combinations of $h_-$, $h_+$, $g_-$, and $g_+$. On 134
@@ -158,7 +158,7 @@ maintaining landmark accuracy and observed topology.
 \section{Related Work}\label{sec:related}
 \subsection{ADMM parameter selection}
 Scaled ADMM and its practical residual criteria were systematized by Boyd
-et al.\ \cite{Boyd2011}. Ghadimi et al.\ derived optimal parameters for
+et al.\ \cite{Boyd2010}. Ghadimi et al.\ derived optimal parameters for
 specific quadratic classes \cite{Ghadimi2015}. Teixeira et al.\ connected
 parameter selection with scaling and constraint preconditioning in distributed
 quadratic programs \cite{Teixeira2016}, while Giselsson and Boyd developed
@@ -205,7 +205,7 @@ problems \cite{ChanElman1989}, and local Fourier analysis (LFA) is a standard
 tool for multigrid design and parameter optimization
 \cite{WienandsJoppich2005}. Translation-invariant periodic problems admit exact
 Fourier decompositions; local and nonstandard analyses can remain informative
-for random or discontinuous coefficients \cite{Rodrigo2017,Kumar2019}. Here the
+for random or discontinuous coefficients \cite{Rodrigo2019,Kumar2019}. Here the
 stationary map is an ADMM error iteration, and global coefficient freezing
 converts each observed optical-flow block into a separable constant-coefficient
 surrogate.
@@ -219,7 +219,7 @@ regularized convex subproblems with accelerated ADMM on graphics processing
 units (GPUs)
 \cite{Thorley2021}. Song et al.\ use a related quadratic model in their spectral
 oADMM study \cite{Song2024}. Learning-based methods broaden the current
-landscape \cite{Hering2022}, but the present work concerns numerical parameter
+landscape \cite{Hering2023}, but the present work concerns numerical parameter
 selection for the linearized variational subproblem.
 
 \section{Quadratic ADMM and Reduced Error Dynamics}\label{sec:quadratic}
@@ -261,7 +261,7 @@ C_H(\rho)=(H-\rho\Id)(H+\rho\Id)^{-1},\qquad
 C_G(\rho)=(G-\rho\Id)(G+\rho\Id)^{-1}.
 \]
 \begin{proposition}[Reduced Cayley error operator]\label{prop:reduced}
-The nonzero spectra of the oADMM state map and
+The nonzero spectra of the $2N$-dimensional oADMM state map for $(w,u)$ and
 \begin{equation}
 E_{\rho,\alpha}
 =\left(1-\frac{\alpha}{2}\right)\Id
@@ -281,7 +281,7 @@ the parameter reduction below comes from the modal dependence of
 If $H,G\succeq0$ and $H+G\succ0$, then for every $\rho>0$,
 $\kappa_\rho:=\norm{C_H(\rho)C_G(\rho)}_2<1$. Consequently
 \[
-\spr(E_{\rho,\alpha})
+\spr(E_{\rho,\alpha})\le\norm{E_{\rho,\alpha}}_2
 \le 1-\frac{\alpha}{2}(1-\kappa_\rho)<1,
 \]
 for $0<\alpha\le2$.
@@ -378,9 +378,12 @@ then
 |e(h,g;\rho,\alpha)|
 \label{eq:fourcorner}
 \end{equation}
-for every $\rho>0$ and $0<\alpha\le2$. If only the interval enclosure is known,
-the right-hand side remains a valid rectangular upper envelope, but equality
-with the true spectral radius need not hold.
+for every $\rho>0$ and $0<\alpha\le2$. More generally, if $H$ and $G$ are
+simultaneously diagonalizable and all their attained joint pairs lie in the
+stated rectangle, the right-hand side is a valid upper envelope even when the
+four corners are not attained; equality with the true spectral radius then
+need not hold. No such conclusion follows from the marginal intervals alone
+in the noncommuting case.
 \end{theorem}
 \begin{proof}
 Equation~\eqref{eq:theta_derivatives} makes the extrema of $\theta$ on the
@@ -436,8 +439,8 @@ for every candidate branch pair; their roots form a finite superset that is
 filtered by evaluating the original objective.
 
 \begin{theorem}[Finite penalty candidate set]\label{thm:finite}
-Let $\mathcal I=[\rho_-,\rho_+]\subset(0,\infty)$. A global minimizer of
-\eqref{eq:reduced_objective} over $\mathcal I$ is contained in the following
+Let $\mathcal I=[\rho_-,\rho_+]\subset(0,\infty)$. A global minimizer of the
+reduced objective $\widehat U$ over $\mathcal I$ is contained in the following
 constructively generated finite set:
 \begin{enumerate}
 \item $\rho_-$ and $\rho_+$;
@@ -531,9 +534,10 @@ One parameter pair is selected for the entire family through
 \label{eq:frozen_objective}
 \end{equation}
 Because each member of the family is a separable constant-coefficient model,
-\eqref{eq:frozen_objective} is its exact family-wise worst contraction factor.
-The finite algebraic construction of Theorem~\ref{thm:finite} applies to this
-finite collection of scalar branches.
+\eqref{eq:frozen_objective} is the exact worst contraction factor over the
+entire frozen family. The finite algebraic argument of
+Theorem~\ref{thm:finite} applies unchanged to this finite collection of scalar
+branches.
 
 \subsection{Optional variable-coefficient rate bounds}
 Rigorous noncommuting bounds may be evaluated after tuning. For example, for
@@ -644,19 +648,32 @@ frozen-family objective over $\mathcal I\times(0,2]$. For the assembled
 variable-coefficient operator, the same pair is a predictor rather than a
 generally optimal pair.
 \end{corollary}
-\begin{remark}
+\begin{proof}
+For each $i$, the component curvatures of $H_i$ are $\nu$ and
+$\nu+\mu\norm{q_i}^2$, with the former attained because $d\ge2$. Across the
+frozen family, their minimum and maximum are therefore $h_-$ and $h_+$ in
+\eqref{eq:h_endpoints}, and both are attained. Every family mode lies in the
+rectangle $[h_-,h_+]\times[g_-,g_+]$, so coordinatewise monotonicity places
+the extreme values of $\theta$ at its corners. All four corners are attained
+across the family, and convexity of $t\mapsto|1-\alpha+\alpha t|$ therefore
+makes their largest magnitude the exact family-wise maximum. Finally,
+$\nu+\gamma>0$ excludes their common null mode, and
+Theorem~\ref{thm:finite} gives the stated global minimizer.
+\end{proof}
+
+% \begin{remark}
 The four-corner reduction is exact for the separable commuting surrogate; the
 resulting parameter pair is therefore globally optimal over
 $\mathcal I\times(0,2]$ for that surrogate, but serves as a predictor of the
 optimal parameters for the full variable-coefficient registration iteration.
-\end{remark}
-In general, the selected pair need not belong to
-\[
-\argmin_{\rho\in\mathcal I,\ 0<\alpha\le2}
-R_{\rm true}(\rho,\alpha).
-\]
-The predictor ignores global orientation interactions between spatially varying
-rank-one blocks; the experiments assess its practical transfer.
+% \end{remark}
+% In general, the selected pair need not belong to
+% \[
+% \argmin_{\rho\in\mathcal I,\ 0<\alpha\le2}
+% R_{\rm true}(\rho,\alpha).
+% \]
+% The predictor ignores global orientation interactions between spatially varying
+% rank-one blocks; the experiments assess its practical transfer.
 
 \subsection{One-shot deployment policy}
 \begin{center}
@@ -900,12 +917,13 @@ Validation-selected fixed comparator $(0.1, 1.0)$ & 303.5 & 2.53 & 7.3306\\
 \end{table}
 
 \subsubsection{FIRE retinal registration}
-The public FIRE fundus registration benchmark
-\cite{HernandezMatas2017}: all 134 landmarked pairs (14~A, 49~P, and 71~S),
-converted to a foreground-percentile-normalized green channel and resized to
-$256^2$. Landmarks are used only for evaluation. The problem is retinal
-diffeomorphic registration under identical phase-correlation initialization,
-pyramid, objective, and stopping criteria, with one CPU BLAS/OpenMP thread.
+For the public FIRE fundus registration benchmark
+\cite{HernandezMatas2017}, we use all 134 landmarked pairs (14~A, 49~P, and
+71~S), converted to a foreground-percentile-normalized green channel and
+resized to $256^2$. Landmarks are used only for evaluation. The problem is
+retinal diffeomorphic registration under identical phase-correlation
+initialization, pyramid, objective, and stopping criteria, with one CPU
+BLAS/OpenMP thread.
 One-shot four-corner tuning is compared with the validation-selected fixed
 comparator, residual balancing, a safeguarded BB proxy, and Fixed oADMM on
 iterations, runtime, TRE, and topology.
@@ -992,10 +1010,12 @@ rank-one blocks.
 \subsection{Expected degradation and computational tradeoff}
 Smooth magnitude and orientation variation produced relatively small regret;
 the abrupt orientation interface and the random-gradient stress tests produced
-larger regrets, with the strongest noncommutativity cases largest in the
-controlled suite. These higher regrets are consistent with increasing mismatch
-between the frozen separable surrogate and the assembled noncommuting
-operator. The commutator norm alone does not fully determine predictor quality. More accurate parameter selection
+larger regrets; the most strongly noncommuting cases had the largest regrets
+in the controlled suite. These higher regrets are consistent with increasing
+mismatch between the frozen separable surrogate and the assembled
+noncommuting operator. The commutator norm alone does not fully determine
+predictor quality.
+More accurate parameter selection
 can instead use repeated spectral calculations on the large
 variable-coefficient operator. The four-corner predictor occupies the
 complementary regime: it uses stronger structural assumptions to make tuning
@@ -1233,75 +1253,7 @@ advance. Roots generated by inactive pairs and roots made extraneous by
 denominator clearing merely enlarge the finite set. Evaluating the original
 objective at every retained candidate therefore proves the theorem.
 
-\begin{thebibliography}{99}
-\bibitem{Ashburner2007}
-J. Ashburner, ``A fast diffeomorphic image registration algorithm,''
-\emph{NeuroImage}, 38(1):95--113, 2007.
-\bibitem{Boyd2011}
-S. Boyd, N. Parikh, E. Chu, B. Peleato, and J. Eckstein,
-``Distributed optimization and statistical learning via the alternating
-direction method of multipliers,'' \emph{Foundations and Trends in Machine
-Learning}, 3(1):1--122, 2011.
-\bibitem{Borovec2018}
-J. Borovec, A. Mu\~noz-Barrutia, and J. Kybic, ``Benchmarking of image
-registration methods for differently stained histological slides,'' in
-\emph{IEEE ICIP}, pp. 3368--3372, 2018.
-\bibitem{ChanElman1989}
-T. F. Chan and H. C. Elman, ``Fourier analysis of iterative methods for
-elliptic problems,'' \emph{SIAM Review}, 31(1):20--49, 1989.
-\bibitem{Ghadimi2015}
-E. Ghadimi, A. Teixeira, I. Shames, and M. Johansson, ``Optimal parameter
-selection for ADMM: quadratic problems,'' \emph{IEEE Transactions on Automatic
-Control}, 60(3):644--658, 2015.
-\bibitem{GiselssonBoyd2017}
-P. Giselsson and S. Boyd, ``Linear convergence and metric selection for
-Douglas--Rachford splitting and ADMM,'' \emph{IEEE Transactions on Automatic
-Control}, 62(2):532--544, 2017.
-\bibitem{Hering2022}
-A. Hering, L. Hansen, T. C. W. Mok, et al., ``Learn2Reg: comprehensive
-multi-task medical image registration challenge,'' \emph{IEEE Transactions on
-Medical Imaging}, 42(3):697--712, 2023.
-\bibitem{HernandezMatas2017}
-C. Hern\'andez-Matas, X. Zabulis, A. Triantafyllou, P. Anyfanti, S. Douma, and
-A. A. Argyros, ``FIRE: fundus image registration dataset,'' \emph{Journal for
-Modeling in Ophthalmology}, 1(4):16--28, 2017.
-\bibitem{Kumar2019}
-P. Kumar, C. Rodrigo, F. J. Gaspar, and C. W. Oosterlee, ``On local Fourier
-analysis of multigrid methods for PDEs with jumping and random coefficients,''
-\emph{SIAM Journal on Scientific Computing}, 41(3):A1385--A1413, 2019.
-\bibitem{MangBiros2015}
-A. Mang and G. Biros, ``An inexact Newton--Krylov algorithm for constrained
-diffeomorphic image registration,'' \emph{SIAM Journal on Imaging Sciences},
-8(2):1030--1069, 2015.
-\bibitem{Rodrigo2017}
-C. Rodrigo, F. J. Gaspar, and L. T. Zikatanov, ``On the validity of the local
-Fourier analysis,'' arXiv:1710.00408, 2017.
-\bibitem{Song2024}
-J. Song, W. Lu, Y. Lei, Y. Tang, Z. Pan, and J. Duan, ``Optimizing ADMM and
-over-relaxed ADMM parameters for linear quadratic problems,'' in
-\emph{Proceedings of AAAI}, 38(8):8117--8125, 2024.
-\bibitem{Teixeira2016}
-A. Teixeira, E. Ghadimi, I. Shames, H. Sandberg, and M. Johansson, ``The ADMM
-algorithm for distributed quadratic problems: parameter selection and
-constraint preconditioning,'' \emph{IEEE Transactions on Signal Processing},
-64(2):290--305, 2016.
-\bibitem{Thorley2021}
-A. Thorley, X. Jia, H. J. Chang, et al., ``Nesterov accelerated ADMM for fast
-diffeomorphic image registration,'' in \emph{MICCAI}, LNCS 12904, pp. 150--160,
-2021.
-\bibitem{Vercauteren2009}
-T. Vercauteren, X. Pennec, A. Perchant, and N. Ayache, ``Diffeomorphic demons:
-efficient non-parametric image registration,'' \emph{NeuroImage},
-45(1):S61--S72, 2009.
-\bibitem{WienandsJoppich2005}
-R. Wienands and W. Joppich, \emph{Practical Fourier Analysis for Multigrid
-Methods}. Chapman \& Hall/CRC, 2005.
-\bibitem{Wohlberg2017}
-B. Wohlberg, ``ADMM penalty parameter selection by residual balancing,''
-arXiv:1704.06209, 2017.
-\bibitem{Xu2017}
-Z. Xu, M. A. T. Figueiredo, and T. Goldstein, ``Adaptive ADMM with spectral
-penalty parameter selection,'' in \emph{AISTATS}, PMLR 54:718--727, 2017.
-\end{thebibliography}
+\bibliographystyle{abbrv}
+\bibliography{references}
 
 \end{document}
