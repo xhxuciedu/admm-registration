@@ -9,10 +9,10 @@ SNAPP. Only the final portal actions and permissions check remain open.
 - [x] Corresponding telephone and ORCID are recorded in the private portal note
   and must be entered directly in SNAPP; neither is stored in this repository.
   Fax: not applicable.
-- [x] Author-contribution statement: “Xiaohui Xie conceived the study,
-  developed the methodology and software, performed the experiments and
-  analysis, and wrote the manuscript.”
-- [x] Competing interests: “The author declares no competing interests.”
+- [x] Author-contribution statement: “Katherine Xie and Jie Wu conducted the
+  research and wrote and edited the manuscript. Xiaohui Xie conceived the work
+  and edited the manuscript.”
+- [x] Competing interests: “The authors declare no competing interests.”
 - [x] Funding: no specific funding.
 - [x] Public code URL: https://github.com/xhxuciedu/admm-registration
 - [x] Reviewer suggestions: none.

@@ -26,6 +26,11 @@ def style() -> None:
     })
 
 
+def panel_label(ax, text: str) -> None:
+    ax.text(-0.22, 1.12, text, transform=ax.transAxes,
+            fontsize=10, fontweight="bold", va="top", ha="left")
+
+
 def algebraic_figure() -> None:
     constant = json.loads((RAW / "constant_coeff.json").read_text())
     n = np.array([row["n"] for row in constant])
@@ -34,13 +39,16 @@ def algebraic_figure() -> None:
     predictor = regimes[regimes.method == "pixel_curvature_predictor"].copy()
     certificate = regimes[regimes.method == "predict_then_certify"].copy()
 
-    fig, axes = plt.subplots(1, 3, figsize=(7.25, 2.35), constrained_layout=True)
+    fig, axes = plt.subplots(1, 3, figsize=(7.25, 2.45), constrained_layout=True)
     ax = axes[0]
     ax.semilogy(n, np.maximum(error, 1e-17), "o-", color=COLORS["blue"], lw=1.7, ms=5)
     ax.axhline(1e-14, color=COLORS["gray"], ls="--", lw=.9)
-    ax.set(title="Constant coefficients", xlabel="Grid side length", ylabel=r"$|U_{\rm LFA}-\rho(T)|$")
+    ax.set(title="Constant coefficients", xlabel="Grid side length",
+           ylabel=r"$|U_{\mathrm{LFA}}-\varrho(T)|$")
     ax.set_xticks(n)
-    ax.text(.04, .08, "machine precision", transform=ax.transAxes, color=COLORS["gray"], fontsize=8)
+    ax.text(.05, .90, "machine precision", transform=ax.transAxes, color=COLORS["gray"],
+            fontsize=8, va="top")
+    panel_label(ax, "(a)")
 
     ax = axes[1]
     all_gap = predictor.parameter_gap.to_numpy()
@@ -54,8 +62,9 @@ def algebraic_figure() -> None:
     for j, values in enumerate([all_gap, smooth_gap], 1):
         ax.scatter(j + rng.normal(0, .045, len(values)), values, s=15, alpha=.75, color=COLORS["blue"])
     ax.axhline(.10, color=COLORS["orange"], ls="--", lw=1.1, label="quality gate")
-    ax.set(title="Predictor quality", ylabel="Relative spectral-radius gap")
+    ax.set(title="Predictor quality", ylabel="Relative parameter gap")
     ax.legend(frameon=False, loc="upper right")
+    panel_label(ax, "(b)")
 
     ax = axes[2]
     actual = certificate.actual_radius.to_numpy()
@@ -65,8 +74,9 @@ def algebraic_figure() -> None:
     ax.plot([lo, hi], [lo, hi], color=COLORS["gray"], ls="--", lw=1, label="exact")
     ax.axhline(1, color=COLORS["orange"], ls=":", lw=1, label="convergence threshold")
     ax.set(xlim=(lo, hi), ylim=(lo, hi), title="Certificate behavior",
-           xlabel="Exact spectral radius", ylabel="Rigorous bound")
+           xlabel=r"Exact spectral radius $\varrho(T)$", ylabel="Rigorous bound")
     ax.legend(frameon=False, loc="upper left")
+    panel_label(ax, "(c)")
     fig.savefig(FIG / "algebraic_validation.pdf", bbox_inches="tight")
     plt.close(fig)
 
