@@ -99,7 +99,7 @@ def plot_headline(data: pd.DataFrame, strongest: str) -> None:
     ax[1, 0].plot(lim,lim,color=".3",lw=.9); ax[1, 0].set(title="Landmark accuracy", xlabel="Fixed-pair TRE (px)", ylabel="Four-corner TRE (px)", xlim=lim, ylim=lim, aspect="equal")
     for group, color in zip(groups,["#0072b2","#d55e00","#009e73"]):
         z=p[p.group==group]; ax[1,1].scatter(z.h_plus,z.rho_initial,s=18,alpha=.75,label=group,color=color,edgecolors="none")
-    ax[1,1].set(title="Image-dependent penalty selection",xlabel=r"Maximum curvature $h_+$",ylabel=r"Predicted penalty $\rho_p$")
+    ax[1,1].set(title="Image-dependent penalty selection",xlabel=r"Maximum curvature $h_+$",ylabel=r"Predicted penalty $\rho_{\mathrm{4C}}$")
     ax[1,1].legend(title="FIRE group",frameon=False,fontsize=8,title_fontsize=8,ncol=3,loc="upper right")
     for label,axis in zip(["(a)","(b)","(c)","(d)"],ax.flat): axis.text(-.16,1.08,label,transform=axis.transAxes,fontweight="bold",fontsize=10)
     fig.savefig(FIGURES / "fire256_headline.pdf", bbox_inches="tight")

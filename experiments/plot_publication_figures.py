@@ -44,7 +44,7 @@ def algebraic_figure() -> None:
     ax.semilogy(n, np.maximum(error, 1e-17), "o-", color=COLORS["blue"], lw=1.7, ms=5)
     ax.axhline(1e-14, color=COLORS["gray"], ls="--", lw=.9)
     ax.set(title="Constant coefficients", xlabel="Grid side length",
-           ylabel=r"$|U_{\mathrm{LFA}}-\varrho(T)|$")
+           ylabel=r"$|U_{\mathrm{4C}}-\varrho(E_{\rho,\alpha})|$")
     ax.set_xticks(n)
     ax.text(.05, .90, "machine precision", transform=ax.transAxes, color=COLORS["gray"],
             fontsize=8, va="top")
@@ -62,7 +62,7 @@ def algebraic_figure() -> None:
     for j, values in enumerate([all_gap, smooth_gap], 1):
         ax.scatter(j + rng.normal(0, .045, len(values)), values, s=15, alpha=.75, color=COLORS["blue"])
     ax.axhline(.10, color=COLORS["orange"], ls="--", lw=1.1, label="quality gate")
-    ax.set(title="Predictor quality", ylabel="Relative parameter gap")
+    ax.set(title="Predictor quality", ylabel="Spectral-radius regret")
     ax.legend(frameon=False, loc="upper right")
     panel_label(ax, "(b)")
 
@@ -74,7 +74,7 @@ def algebraic_figure() -> None:
     ax.plot([lo, hi], [lo, hi], color=COLORS["gray"], ls="--", lw=1, label="exact")
     ax.axhline(1, color=COLORS["orange"], ls=":", lw=1, label="convergence threshold")
     ax.set(xlim=(lo, hi), ylim=(lo, hi), title="Certificate behavior",
-           xlabel=r"Exact spectral radius $\varrho(T)$", ylabel="Rigorous bound")
+           xlabel=r"True spectral radius $\varrho(E_{\rho,\alpha})$", ylabel="Rigorous bound")
     ax.legend(frameon=False, loc="upper left")
     panel_label(ax, "(c)")
     fig.savefig(FIG / "algebraic_validation.pdf", bbox_inches="tight")
