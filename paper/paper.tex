@@ -46,26 +46,28 @@ Irvine, California, USA}
 \maketitle
 
 \begin{abstract}
-Selecting the penalty and over-relaxation parameters of quadratic ADMM can
-require numerical optimization of the spectral radius of a large iteration
-operator. We identify a separable class for which this optimization reduces to
-four scalar modes. When the joint modal spectrum is a Cartesian product of data
-and regularizer curvatures with attained endpoint combinations, the oADMM modal
-factor is coordinatewise monotone, so its worst magnitude is attained at four
-endpoint combinations. The
-conditional relaxation has a closed form, and the remaining penalty problem is
-solved by a finite algebraic candidate set rather than a grid search, gradient
-descent, or repeated spectral-radius calculation. Spatially varying
-diffeomorphic registration is noncommuting and does not satisfy the exact
-theorem globally. Local coefficient freezing recovers the separable structure,
-while the rank-one optical-flow Hessian yields an inexpensive four-corner
-parameter predictor. On 134 FIRE retinal pairs at $256\times256$, one-shot
-tuning reduced median pairwise runtime by 34.4\% and inner iterations by 39.6\%
-relative to a fixed pair selected on separate validation data, with essentially
-unchanged landmark error and no observed nonpositive Jacobian. On ten CIMA
-histology pairs, matched-protocol runtime decreased by 20.1\%. Optional
-noncommuting rate bounds are rigorous but conservative and are not used by the
-deployed selector.
+Selecting the penalty and relaxation parameters of the alternating direction
+method of multipliers (ADMM) can require repeated spectral-radius evaluation
+of a large parameter-dependent iteration operator. We consider over-relaxed
+ADMM (oADMM) for a separable quadratic split whose attained joint modal
+spectrum is a Cartesian product of data and regularizer curvatures. The modal
+contraction factor is monotone along each curvature coordinate line;
+consequently, its largest magnitude is attained among four endpoint
+combinations. The relaxation
+parameter is optimized analytically for each penalty, and the remaining
+penalty problem reduces to a finite algebraically characterized superset of
+candidate minimizers. In this sense the method is search-free: it avoids
+grid-based or iterative numerical optimization over the penalty while still
+computing the required polynomial roots numerically. Full diffeomorphic image
+registration is spatially varying and noncommuting, so the exact theorem does
+not apply to the assembled operator. Coefficient freezing and the rank-one
+optical-flow Hessian nevertheless yield an inexpensive predictor determined by
+the four combinations of $h_-$, $h_+$, $g_-$, and $g_+$. On 134 FIRE retinal
+pairs at $256\times256$, one-shot tuning reduced median pairwise runtime by
+34.4\% and inner iterations by 39.6\% relative to a fixed pair selected on
+separate validation data. On ten CIMA histology pairs, runtime decreased by
+20.1\%. In both studies, landmark accuracy was essentially unchanged and no
+nonpositive discrete Jacobian was observed.
 \end{abstract}
 
 \noindent\textbf{Keywords:} alternating direction method of multipliers;
@@ -73,40 +75,63 @@ parameter selection; spectral analysis; diffeomorphic image registration;
 local Fourier analysis
 
 \section{Introduction}\label{sec:introduction}
-Alternating direction methods are attractive for large quadratic imaging
-problems because each split subproblem can retain its natural computational
-structure. In variational image registration, for example, one update is
-pixelwise and the other is diagonal in a Fourier basis
-\cite{Thorley2021,Song2024}. This advantage does not remove the sensitivity of
-ADMM to its penalty $\rho$ and, for over-relaxed ADMM (oADMM), its relaxation
-$\alpha$. Poor fixed values can dominate the cost of an otherwise efficient
-solver.
+Spectral parameter selection for quadratic ADMM can be expensive in its own
+right. For a trial penalty $\rho$, a spectral method constructs or applies the
+corresponding iteration operator, estimates its convergence factor, and
+repeats this calculation while optimizing $\rho$; over-relaxation introduces
+the additional parameter $\alpha$. In large imaging systems the operator may
+have hundreds of thousands of unknowns, so repeated spectral-radius evaluation
+can offset the computational advantage of splitting. This issue is especially
+pronounced after spatially varying image terms are assembled and whenever
+relinearization changes the local Hessian.
 
-Optimal parameter formulas are known for several quadratic classes
-\cite{Ghadimi2015,Teixeira2016,GiselssonBoyd2017}. Song et al.\ treat a more
-general linear-quadratic problem by mapping each trial penalty to an iteration
-operator, evaluating its spectral radius, and numerically optimizing over the
-penalty; relaxation is then selected conditionally \cite{Song2024}. The cost is
-\emph{many trial values of $\rho$ times spectral-radius evaluation of a large
-operator}. The penalty does not change during a fixed inner solve: the expense
-is incurred while finding the fixed pair for that quadratic subproblem.
+The structural question addressed here is whether this spectral optimization
+can collapse analytically when the quadratic operators possess separable modal
+structure. For the class studied below, the oADMM contraction of a common mode
+depends only on a data curvature $h$ and a regularizer curvature $g$. For fixed
+$\rho$, this scalar factor is monotone along each coordinate line, with the
+direction determined by the other curvature. If the
+attained joint modal spectrum is the Cartesian product of the two curvature
+sets, the worst contraction must therefore occur among
+\[
+(h_-,g_-),\quad(h_-,g_+),\quad(h_+,g_-),\quad(h_+,g_+).
+\]
+The large spectral optimization is reduced exactly to four rational scalar
+branches. The optimal relaxation is available in closed form for each
+penalty, and the reduced penalty objective is piecewise rational. Its global
+minimum on a prescribed compact interval belongs to a finite algebraically
+characterized candidate set.
 
-The central observation here applies to a separable quadratic split. Its oADMM
-contraction on a mode depends on only two nonnegative curvatures, $h$ and $g$.
-The resulting scalar function is monotone in each coordinate on a spectral
-rectangle. Consequently, its worst magnitude is attained at the four corners.
-This reduces a large spectral optimization to four rational branches. The
-relaxation can be eliminated analytically, and a finite set of algebraic
-candidates contains a global minimizer of the resulting four-corner objective
-on a prescribed admissible penalty interval.
+We call this parameter selection \emph{search-free}: it performs neither a
+grid search nor an iterative numerical optimization over $\rho$. Polynomial
+roots in the finite candidate construction are still evaluated numerically;
+the distinction is the replacement of repeated optimization and
+spectral-radius evaluation by a fixed algebraic reduction.
 
-Real image registration does not possess this global separability: the
-pixelwise image Hessian varies spatially, while the regularizer couples
-neighboring pixels. We recover the exact modal model locally by freezing the
-image coefficient. The rank-one optical-flow Hessian then collapses all local
-curvature endpoints to two global values. After an $O(n)$ scan of the image
-gradients, parameter optimization has only four scalar branches.
-The conceptual sequence is therefore
+The exact result requires more than commutativity. Simultaneous
+diagonalization supplies paired eigenvalues $(h_i,g_i)$, but these pairs need
+not fill the Cartesian product of the marginal spectra. The four endpoint
+combinations are exact modes only under the separability and attainment
+assumptions stated in Theorem~\ref{thm:fourcorner}. For arbitrary commuting
+operators they define a rectangular envelope, and for noncommuting operators
+they define a surrogate unless an independent bound is available.
+
+Diffeomorphic image registration provides the motivating noncommuting
+application. Its linearized data Hessian varies by pixel, whereas the Sobolev
+regularizer couples neighboring pixels; the assembled matrices therefore
+generally do not commute. Freezing the image coefficient recovers the separable
+model locally. Moreover, each optical-flow Hessian is a rank-one update of a
+multiple of the identity, so all required data curvature information reduces
+to
+\[
+h_-=\nu,\qquad h_+=\nu+\mu\max_i\norm{\nabla I(x_i)}^2.
+\]
+Together with the regularizer endpoints $g_-$ and $g_+$, these values yield a
+four-branch predictor after one $O(n)$ scan of gradient magnitudes. The result
+is exact for the frozen separable family and predictive for the full
+variable-coefficient registration operator.
+
+The mathematical and computational progression is
 \begin{align*}
 \text{quadratic ADMM}&\longrightarrow\text{modal factor}
 \longrightarrow\text{four corners}\\
@@ -116,41 +141,61 @@ The conceptual sequence is therefore
 
 The contributions are:
 \begin{enumerate}
-\item a four-corner spectral theorem for quadratic oADMM with a
-Cartesian-product joint modal spectrum;
-\item a finite algebraic method for jointly selecting $\rho$ and $\alpha$ for
-that model, without repeated iteration-matrix eigensolves;
-\item a local-freezing extension to spatially varying problems and a rank-one
-specialization that gives a one-shot registration predictor; and
-\item matched-protocol FIRE and CIMA experiments showing reduced iterations and
-runtime with essentially unchanged registration accuracy and no observed
-nonpositive discrete Jacobian under the reported protocol.
+\item A four-corner spectral theorem for quadratic oADMM under an attained
+Cartesian-product joint modal spectrum.
+\item A finite algebraic joint selection of $\rho$ and $\alpha$ that eliminates
+grid-based or iterative penalty search for this structured model.
+\item A registration specialization based on local coefficient freezing and
+the rank-one optical-flow Hessian, reducing the data-term information required
+for tuning to endpoint curvatures.
+\item Experimental evidence that the surrogate-optimal parameters transfer to
+noncommuting registration systems, reducing iterations and runtime while
+maintaining landmark accuracy and observed topology.
 \end{enumerate}
 
 \section{Related Work}\label{sec:related}
 \subsection{ADMM parameter selection}
-Scaled ADMM and practical residual criteria were systematized by Boyd et al.\
-\cite{Boyd2011}. Ghadimi et al.\ derived optimal parameters for several
-quadratic classes \cite{Ghadimi2015}; Teixeira et al.\ studied parameter
-selection, scaling, and preconditioning in distributed quadratic programs
-\cite{Teixeira2016}; and Giselsson and Boyd developed tight metric-dependent
-contraction bounds \cite{GiselssonBoyd2017}. Adaptive alternatives include
-residual balancing and Barzilai--Borwein (BB) spectral updates
-\cite{Wohlberg2017,Xu2017}.
+Scaled ADMM and its practical residual criteria were systematized by Boyd
+et al.\ \cite{Boyd2011}. Ghadimi et al.\ derived optimal parameters for
+specific quadratic classes \cite{Ghadimi2015}. Teixeira et al.\ connected
+parameter selection with scaling and constraint preconditioning in distributed
+quadratic programs \cite{Teixeira2016}, while Giselsson and Boyd developed
+tight contraction bounds that depend on the chosen metric
+\cite{GiselssonBoyd2017}. These works obtain strong conclusions from particular
+quadratic structure or operator bounds. The present analysis instead
+identifies a joint modal structure under which the full worst-mode calculation
+reduces to four attained endpoint pairs.
+
+Adaptive methods avoid an offline spectral model. Residual balancing changes
+the penalty according to primal and dual residual magnitudes
+\cite{Wohlberg2017}; Barzilai--Borwein (BB) spectral updates estimate local
+curvature from iterate differences \cite{Xu2017}. Such rules apply beyond the
+separable setting considered here, but they update parameters from the
+observed iteration history rather than solving the fixed quadratic model's
+spectral minimax problem algebraically.
 
 \subsection{Spectral and over-relaxed ADMM}
-Song et al.\ optimize ADMM and oADMM parameters for general linear-quadratic
-problems \cite{Song2024}. Their pipeline is
-\[
-\rho\ \longmapsto\ E_\rho\ \longmapsto\ \spr(E_\rho)\
-\longmapsto\ \text{numerical optimization over }\rho,
-\]
-with an optimal or closed-form relaxation conditional on $\rho$. In contrast,
-the present separable model maps four spectral endpoints to four rational
-branches and then to a finite algebraic candidate set. This distinction concerns
-parameter-selection overhead and structure, not changing $\rho$ during inner
-ADMM iterations. We do not claim superiority to full-resolution direct spectral
-optimization without a direct experiment at that resolution.
+Song et al.\ address a broader class of linear-quadratic ADMM problems and
+numerically optimize the spectral convergence factor with respect to the
+penalty \cite{Song2024}. For each candidate $\rho$, their formulation requires
+spectral information from the corresponding iteration operator; the
+relaxation parameter is then selected conditionally. This generality is
+valuable because it does not require the Cartesian-product modal structure
+used here.
+
+Direct application to full-resolution registration is computationally
+demanding: the assembled variable-coefficient operator is large and
+noncommuting, and its spectrum changes when image warping changes the
+linearized Hessian. Repeated spectral-radius evaluation across trial penalties
+can therefore make parameter selection expensive. A downsampled operator
+reduces this cost but introduces a transfer problem between the coarse
+spectral model and the full-resolution solve. The present work adopts the
+complementary tradeoff. Stronger separability assumptions collapse the
+structured spectral problem to four scalar branches and a finite penalty
+candidate set; the resulting construction is then used as an inexpensive
+predictor outside that exact class.
+A coarse direct-spectral diagnostic illustrating this overhead and transfer
+issue is reported in the supplementary information.
 
 \subsection{Fourier and local Fourier analysis}
 Fourier analysis has long characterized stationary iterations for elliptic
@@ -167,7 +212,8 @@ DARTEL \cite{Ashburner2007}, diffeomorphic demons
 \cite{Vercauteren2009}, and large-deformation optimal-control formulations
 \cite{MangBiros2015} are representative optimization-based registration
 methods. Thorley et al.\ compose nonstationary velocity updates and solve
-regularized convex subproblems with accelerated ADMM on GPUs
+regularized convex subproblems with accelerated ADMM on graphics processing
+units (GPUs)
 \cite{Thorley2021}. Song et al.\ use a related quadratic model in their spectral
 oADMM study \cite{Song2024}. Learning-based methods broaden the current
 landscape \cite{Hering2022}, but the present work concerns numerical parameter
@@ -204,7 +250,9 @@ and replace $v^{k+1}$ by $\widehat v^{k+1}$ in
 \eqref{eq:wupdate} and the dual update.
 
 \subsection{Reduced Cayley representation}
-Define
+The original oADMM recurrence couples primal and dual errors. Reducing it to
+one $N$-dimensional operator isolates all dependence on $\rho$ and $\alpha$ and
+exposes the common-mode scalar factor used in the four-corner argument. Define
 \[
 C_H(\rho)=(H-\rho\Id)(H+\rho\Id)^{-1},\qquad
 C_G(\rho)=(G-\rho\Id)(G+\rho\Id)^{-1}.
@@ -236,13 +284,15 @@ $\kappa_\rho:=\norm{C_H(\rho)C_G(\rho)}_2<1$. Consequently
 for $0<\alpha\le2$.
 \end{theorem}
 \begin{proof}
-For $A\succeq0$, the Cayley eigenvalue
-$(\lambda-\rho)/(\lambda+\rho)$ has magnitude at most one, with equality only
-for $\lambda=0$. Equality in
-$\norm{C_HC_Gx}\le\norm{C_Gx}\le\norm{x}$ would imply
-$x\in\ker G$ and $C_Gx=-x\in\ker H$, contradicting
-$H+G\succ0$. Compactness gives strict inequality; the displayed estimate
-follows from \eqref{eq:Ealpha}.
+For $A\succeq0$, orthogonal diagonalization shows
+$\norm{C_A(\rho)}_2\le1$, with norm preservation possible only on $\ker A$.
+If a unit vector $x$ satisfied $\norm{C_HC_Gx}_2=1$, equality throughout
+$\norm{C_HC_Gx}_2\le\norm{C_Gx}_2\le1$ would give
+$x\in\ker G$ and $C_Gx=-x\in\ker H$. Hence
+$x\in\ker H\cap\ker G$, contradicting $H+G\succ0$. The continuous function
+$x\mapsto\norm{C_HC_Gx}_2$ attains its maximum on the finite-dimensional unit
+sphere, so $\kappa_\rho<1$. Finally, the triangle inequality applied to
+\eqref{eq:Ealpha} gives the stated bound.
 \end{proof}
 
 \paragraph{Nullspaces.}
@@ -301,8 +351,12 @@ For fixed $\rho>0$,
 \label{eq:theta_derivatives}
 \end{equation}
 The sign of the first derivative is independent of $h$, and the sign of the
-second is independent of $g$. Thus $\theta$ is coordinatewise monotone on any
-rectangle.
+second is independent of $g$. Thus, for fixed $\rho$, $\theta$ is monotone
+along each coordinate line, although the direction may depend on the other
+coordinate. Its minimum and maximum are therefore attained at corners.
+Relaxation maps $\theta$ affinely to
+$1-\alpha+\alpha\theta$; taking absolute value produces a convex function of
+$\theta$, whose maximum over an interval is again attained at an endpoint.
 
 \begin{theorem}[Four-Corner Spectral Theorem]\label{thm:fourcorner}
 Suppose the joint modal spectrum is the Cartesian product
@@ -342,8 +396,8 @@ The four-corner objective is
 \[
 \max\{|1-\alpha+\alpha a|,\ |1-\alpha+\alpha b|\}.
 \]
-Equioscillation of the two endpoint factors gives the unconstrained optimizer;
-if $(a,b)\ne(1,1)$, accounting for $0<\alpha\le2$ yields
+When $b<1$, equioscillation of the two endpoint factors gives the unique
+unconstrained optimizer; accounting for $0<\alpha\le2$ yields
 \begin{equation}
 \alpha^\star(\rho)=
 \min\left\{2,\frac{2}{2-a(\rho)-b(\rho)}\right\}.
@@ -356,11 +410,22 @@ After eliminating $\alpha$, the reduced objective is
 \widehat U(\rho)&=2b-1
 &&\text{if }a+b\ge1.\nonumber
 \end{align}
-In the degenerate case $a=b=1$, the objective equals one for every admissible
-$\alpha$; any relaxation may be selected, but the mode is not contractive.
+If $b=1$, the objective equals one for every admissible $\alpha$; any
+relaxation may be selected, but the corresponding corner mode or envelope is
+not contractive.
+Appendix~\ref{app:relaxation} gives the constrained equioscillation argument.
 
 \subsection{Finite algebraic penalty selection}
-First deduplicate identical rational corner branches $\theta_c(\rho)$. On a
+After eliminating $\alpha$, the objective is piecewise rational in $\rho$.
+Its expression can change only when the corner attaining $a(\rho)$ changes,
+the corner attaining $b(\rho)$ changes, or the relaxation regime crosses
+$a(\rho)+b(\rho)=1$. Between these events, the reduced objective is one smooth
+rational function. A minimum on each closed piece must therefore occur at a
+piece endpoint or a stationary point. This converts the continuous penalty
+problem into finitely many algebraic conditions.
+
+Formally, first deduplicate identical rational corner branches
+$\theta_c(\rho)$. On a
 compact admissible interval
 $\mathcal I=[\rho_-,\rho_+]\subset(0,\infty)$, changes in the active minimum or
 maximum occur only at pairwise branch intersections.
@@ -380,16 +445,16 @@ discarded; a constant objective piece is represented by its interval
 endpoints. Thus the candidate set remains finite when endpoints coincide.
 After positive denominators are cleared, the respective polynomial degrees are
 at most three, four, and six. Evaluating \eqref{eq:alpha_star} and
-\eqref{eq:fourcorner} on this set---using any admissible $\alpha$ in the
-degenerate $a=b=1$ case---returns a global minimizer of the four-corner
+\eqref{eq:fourcorner} on this set---using any admissible $\alpha$ when
+$b=1$---returns a global minimizer of the four-corner
 objective over $\mathcal I\times(0,2]$.
 \end{theorem}
-The proof is in Appendix~\ref{app:finite}. The result replaces a continuum of
-trial penalties by a constant number of polynomial roots:
-\[
-\boxed{\text{no grid search}+\text{no gradient descent in }\rho
-+\text{no repeated spectral-radius calculation}.}
-\]
+The proof is in Appendix~\ref{app:finite}. The listed roots form a finite
+\emph{superset}: roots outside $\mathcal I$, roots associated with inactive
+branches, and extraneous roots introduced by denominator clearing are filtered
+by evaluating the original objective. Search-free selection refers to this
+finite algebraic evaluation in place of grid-based or iterative optimization
+over $\rho$; numerical polynomial root finding is still required.
 
 \subsection{Arbitrary commuting operators versus Cartesian products}
 Three cases must be distinguished.
@@ -579,9 +644,10 @@ rank-one blocks; the experiments assess its practical transfer.
 \subsection{One-shot deployment policy}
 \begin{center}
 \fbox{\begin{minipage}{0.92\linewidth}
-\textbf{Algorithm 1: One-Shot Four-Corner ADMM Tuning}
+\textbf{Algorithm 1: One-Shot Four-Corner oADMM Tuning}
 \emph{Inputs:} initial image gradients $\{q_i\}$, weights $\mu,\nu$, regularizer
 parameters and grid, and admissible penalty interval $\mathcal I$.
+\emph{Output:} $(\rho_{\rm 4C},\alpha_{\rm 4C})$.
 \begin{enumerate}
 \item From the initial image gradient, compute
 $h_-=\nu$ and $h_+=\nu+\mu\max_i\norm{q_i}^2$.
@@ -591,7 +657,7 @@ $\theta_c(\rho)$.
 \item On the admissible interval, generate the finite algebraic penalty
 candidate set of Theorem~\ref{thm:finite}.
 \item At each candidate compute $a(\rho)$, $b(\rho)$, and
-$\alpha^\star(\rho)$ (or an admissible default in the degenerate case); select
+$\alpha^\star(\rho)$ (or an admissible default when $b(\rho)=1$); select
 the pair minimizing $R_{\rm 4C}$.
 \item Run inner oADMM with this fixed pair.
 \item In one-shot deployment, reuse the pair at later outer registration
@@ -603,42 +669,87 @@ iterations and pyramid levels unless an explicit retuning policy is enabled.
 An \emph{inner ADMM iteration} solves one quadratic problem with fixed
 $H,G,b$, so its optimal fixed parameters do not change during that solve. An
 \emph{outer registration iteration} updates the deformation and relinearizes;
-the warped image gradients and $H$ may then change. The one-shot policy accepts
-this model drift to avoid repeated tuning. The reported ablation tests
+the warped image gradients and $H$ may then change. The one-shot policy reuses
+the initial pair after relinearization, thereby avoiding repeated parameter
+selection. The reported ablation tests
 per-pyramid-level retuning, not separate retuning at every outer
 Gauss--Newton iteration.
 
 \section{Experimental Protocol}\label{sec:protocol}
 The reference two-dimensional solver uses a three-level Gaussian pyramid,
 spatial image gradients, Gauss--Newton optical-flow linearization,
-Sherman--Morrison solves for the rank-one data blocks, and FFT solves for the
-Sobolev regularizer. Velocity increments are composed with the displacement. A
+Sherman--Morrison solves for the rank-one data blocks, and fast Fourier
+transform (FFT) solves for the Sobolev regularizer. Velocity increments are
+composed with the displacement. A
 backtracking line search requires objective decrease and a discrete Jacobian
 above $0.05$. Pyramid transfer is audited and, if needed, its
 nontranslational component is halved until the same floor holds. All methods in
 a comparison share initialization, objective, stopping tolerances, line search,
 pyramid, and topology safeguards.
 
+Three fixed baselines are distinguished throughout: canonical fixed ADMM uses
+$(\rho,\alpha)=(1,1)$, fixed oADMM uses $(1,1.8)$, and the external fixed
+comparator uses $(0.1,1.0)$. The external comparator was chosen using separate
+validation images and was held fixed for both public benchmarks. Adaptive
+comparators are residual balancing and a safeguarded Barzilai--Borwein (BB)
+proxy; implementation details are given in the supplementary information.
+
 The spectral tests use direct eigendecomposition only on tractable systems.
 The controlled spectral studies use
-$\mathcal I=[10^{-2},10^2]$; the real-image selector and the $8\times8$
-spectral diagnostic use $\mathcal I=[10^{-4},10^3]$. Implementations use
+$\mathcal I=[10^{-2},10^2]$; the real-image selector uses
+$\mathcal I=[10^{-4},10^3]$. Implementations use
 $\alpha\in[10^{-6},2]$ as a numerical realization of $0<\alpha\le2$.
 The constant-coefficient test uses periodic $n\times n$ grids,
 $(h_-,h_+)=(0.2,2.3)$, and first-order regularization with
 $(\beta,\gamma)=(0.2,0.1)$. Controlled noncommuting tests separate periodic
 magnitude variation, smooth orientation variation, a sharp orientation
-interface, and Gaussian-smoothed image gradients on $3\times3$ grids.
+interface, and random-gradient stress tests on $n\times n$ grids with $n=3$
+and $N=n^2$ sites. Writing
+$s_i=\sin(2\pi x_{i,1}/n)$ and $e_1=(1,0)^\top$, the first two constructions
+are
+\[
+q_i^{\rm mag}=0.4(1+a s_i)e_1,\qquad
+q_i^{\rm ori}=0.4
+\begin{bmatrix}\cos(a s_i)&\sin(a s_i)\end{bmatrix}^{\!\top},
+\]
+with $a\in\{0.05,0.2,0.5\}$ and
+$a\in\{0.05,0.2,0.6\}$, respectively. The interface field has constant
+magnitude and a $90^\circ$ orientation jump. For the random-gradient cases, a
+fixed periodic Gaussian white-noise field $z$ is filtered with Gaussian scale
+$\sigma\in\{0.6,1.0,1.6\}$ pixels, differentiated, and rescaled:
+\[
+q_i^{\rm rnd}=c_\sigma\nabla(K_\sigma*z)_i,\qquad
+\left(\frac1N\sum_i\norm{q_i^{\rm rnd}}^2\right)^{1/2}=0.4.
+\]
+Thus these cases vary magnitude and orientation jointly. The Gaussian filter
+acts on the precursor field; differentiation and root-mean-square
+renormalization mean that $\sigma$ is not a monotone measure of Hessian
+variation. Every controlled case uses
+$H_i=0.05I_2+q_iq_i^\top$ and the same periodic regularizer with
+$(\beta,\gamma)=(0.2,0.1)$.
+
+For each controlled case, define the normalized commutator
+\[
+\chi=\frac{\norm{HG-GH}_2}{\norm H_2\norm G_2}.
+\]
 For these tests, let $R_{\rm act}$ be the true spectral radius at the selected
 parameters, $R_{\rm ora}$ the radius at numerically oracle-optimized
 parameters, and $U$ a rigorous enclosure evaluated at the selected pair. We
-report the parameter-selection gap
+report the spectral-radius regret
 \[
-\frac{R_{\rm act}-R_{\rm ora}}{R_{\rm ora}}
+\mathcal G_{\rm ora}
+:=\frac{R_{\rm act}-R_{\rm ora}}{R_{\rm ora}}
 \]
-and the enclosure gap $(U-R_{\rm act})/R_{\rm act}$. Thus the former measures
-the spectral performance lost by parameter selection, not the Euclidean
-distance between two parameter vectors.
+and the selected-point surrogate discrepancy
+\[
+\mathcal D_{\rm 4C}
+:=\frac{|R_{\rm 4C}(\rho_{\rm 4C},\alpha_{\rm 4C})
+-R_{\rm act}|}{R_{\rm act}}.
+\]
+The first quantity measures contraction lost relative to the numerical oracle;
+the second measures agreement between the surrogate and true objectives only
+at the four-corner-selected pair. Certificate experiments additionally use the
+enclosure gap $(U-R_{\rm act})/R_{\rm act}$.
 
 The real-image pilot uses a public-domain retinal image and an unrestricted
 immunohistochemistry image under held-out smooth known deformations. CIMA uses
@@ -646,33 +757,31 @@ the five differently stained sections of the public lung-lesion-3 sample and
 all ten unordered pairs \cite{Borovec2018}, resized to $256^2$ after a common
 structural-channel preprocessing. FIRE uses all 134 landmarked pairs (14 A, 49
 P, and 71 S) at $256^2$ \cite{HernandezMatas2017}. Landmarks are used only for
-evaluation. Timings use one CPU BLAS/OpenMP thread. Reproducibility details,
+evaluation. Timings use one central processing unit (CPU) thread for Basic
+Linear Algebra Subprograms (BLAS) and OpenMP. Reproducibility details,
 baseline safeguards, seeds, and certificate protocols are in the supplement.
 
 \section{Results}\label{sec:results}
 \subsection{Exact four-corner validation}
-This first experiment is a controlled synthetic verification of
-Theorem~\ref{thm:fourcorner}. We form a
-constant-coefficient quadratic split on small periodic $n\times n$ grids with
-prescribed data-curvature endpoints $(h_-,h_+)=(0.2,2.3)$---corresponding to
-$(\nu,\mu\max_i\norm{q_i}^2)=(0.2,2.1)$---and a first-order Sobolev regularizer
-with $(\beta,\gamma)=(0.2,0.1)$. Because the data coefficient is spatially
-constant, the operators commute and the joint modal spectrum is exactly the
-Cartesian product of the two curvature intervals with the discrete regularizer
-symbol; no image intensity or landmark data enter this test.
+The first experiment verifies Theorem~\ref{thm:fourcorner} under its exact
+assumptions. We construct constant-coefficient periodic quadratic systems on
+small $n\times n$ grids with prescribed data-curvature endpoints
+$(h_-,h_+)=(0.2,2.3)$ and a first-order Sobolev regularizer with
+$(\beta,\gamma)=(0.2,0.1)$. The operators commute, and their attained joint
+modal spectrum has the required Cartesian-product structure. These synthetic
+systems contain no registration images or landmarks.
 
 The finite algebraic selector returned
 $(\rho,\alpha)=(0.543512,1.898152)$ on every grid. Table~\ref{tab:constant}
-compares the four-corner envelope $U_{\rm 4C}$ with the spectral radius of the
-full reduced operator $E_{\rho,\alpha}$, obtained by direct
-eigendecomposition. The two agree to machine precision, confirming exact
-four-corner equality for this separable model. Panel~(a) of
-Fig.~\ref{fig:spectral} displays the same agreement.
+compares the four-corner value $U_{\rm 4C}$ with the spectral radius of the
+full reduced matrix $E_{\rho,\alpha}$, obtained independently by direct
+eigendecomposition. The two agree to machine precision, verifying the
+predicted equality in this controlled setting. Figure~\ref{fig:spectral}(a)
+displays the same comparison.
 
 \begin{table}[H]
 \centering
-\caption{Synthetic constant-coefficient verification of exact four-corner
-equality on periodic grids (no image data).}
+\caption{Exact four-corner verification on synthetic periodic systems.}
 \label{tab:constant}
 \begin{tabular}{ccc}
 \toprule
@@ -685,105 +794,71 @@ $n$ & Direct radius $\spr(E)$ & $|U_{\rm 4C}-\spr(E)|$\\
 \end{tabular}
 \end{table}
 
-\subsection{Controlled noncommuting tests}
-This experiment remains synthetic: it asks how well the four-corner predictor
-transfers when the data Hessian varies spatially, so that $HG\ne GH$ and the
-exact four-corner equality no longer holds. On $3\times3$ periodic grids we
-constructed ten variable-coefficient optical-flow Hessians from magnitude
-variation, smooth orientation variation, one sharp orientation interface, and
-Gaussian-smoothed random gradients; nine cases are smooth. For each case we
-compared the predictor pair with a numerical spectral oracle for the true
-reduced operator and evaluated optional rate certificates at the selected
-parameters. No registration images or landmarks are used here.
+\subsection{Transfer under controlled noncommutativity}
+We next quantify predictor transfer after deliberately violating the theorem
+assumptions. Ten $3\times3$ periodic systems use spatially varying optical-flow
+Hessians with magnitude variation, smooth orientation variation, an abrupt
+orientation interface, or Gaussian-smoothed random gradient fields. The
+resulting $H$ and $G$ do not commute. At this tractable size, direct
+eigendecomposition gives the true spectral radius, and numerical minimization
+of that radius supplies oracle parameters.
 
-Across the ten cases, the predictor had a median relative parameter gap of
-$0.057$ overall and $0.027$ on the smooth cases, whereas the single
-abrupt-interface case had a gap of $0.193$; no case collapsed to the parameter
-boundary. At the selected parameters, the median absolute relative discrepancy
-between $R_{\rm 4C}$ and $R_{\rm true}$ was $1.4\times10^{-15}$ and the
-maximum was $2.8\times10^{-3}$. The rigorous Perron comparison bound was below
-one in all ten cases, but its median enclosure gap was $1.29$. In a separate
-18-case comparison of signed enclosures, every enclosure contained the exact
-radius. The Perron rectangle was the tightest of the signed constructions,
-with median enclosure and parameter gaps $0.595$ and $0.386$, but remained too
-conservative for online tuning. The detailed certificate table and scaling
-study are in the supplement.
+Figure~\ref{fig:spectral}(b) relates predictor quality directly to
+noncommutativity. The magnitude-only and orientation-only cases had
+$\chi=0.012$--$0.139$ and spectral-radius regret $0.003$--$0.087$. The abrupt
+interface had $(\chi,\mathcal G_{\rm ora})=(0.166,0.193)$. The random-gradient
+stress tests varied magnitude and orientation simultaneously, produced the
+largest commutators ($\chi=0.171$--$0.239$), and had regrets
+$0.238$--$0.296$. Across these ten deterministic cases, the descriptive
+Pearson correlation between $\chi$ and regret was $0.87$. This small
+controlled suite does not establish a universal relationship, but it shows
+that the observed high regrets coincide with stronger noncommutativity rather
+than with Gaussian smoothing itself.
 
-The archived controlled runs distinguish magnitude, smooth orientation,
-abrupt-interface, and smoothed-random regimes, but did not store a normalized
-commutator magnitude. Adding
-$\norm{[H,G]}_2/(\norm H_2\norm G_2)$ as a horizontal-axis diagnostic is
-therefore a TODO rather than an unreported result.
+As a separate pointwise diagnostic, the median selected-point
+discrepancy $\mathcal D_{\rm 4C}$ was $1.4\times10^{-15}$ and its maximum was
+$2.8\times10^{-3}$; this quantity is not plotted in
+Fig.~\ref{fig:spectral}(b). Pointwise agreement does not imply equal minimizers:
+the surrogate can match the true spectral radius at
+$(\rho_{\rm 4C},\alpha_{\rm 4C})$ while differing elsewhere in parameter space,
+where the numerical oracle finds a smaller radius. Detailed noncommuting
+certificates and scaling studies are reported in the supplementary
+information.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=.98\linewidth]{../figures/algebraic_validation.pdf}
-\caption{Spectral validation. \textbf{(a)} Exact equality for the separable
-constant-coefficient model. \textbf{(b)} Spectral-radius regret under
-controlled variable coefficients; ``all'' includes the abrupt-interface case.
-\textbf{(c)} A rigorous but conservative optional certificate.}
+\caption{Validation of the four-corner reduction and predictor.
+\textbf{(a)} Constant-coefficient periodic systems satisfy the attained
+Cartesian-product assumptions; direct eigendecomposition of the full reduced
+matrix agrees with $U_{\rm 4C}$ to machine precision.
+\textbf{(b)} Spatially varying optical-flow Hessians violate commutativity.
+The horizontal axis is the normalized commutator
+$\chi=\norm{HG-GH}_2/(\norm H_2\norm G_2)$, and the vertical axis is the
+spectral-radius regret
+$(R_{\rm act}-R_{\rm ora})/R_{\rm ora}$. Marker shapes identify
+magnitude-only, orientation-only, abrupt-interface, and random-gradient
+constructions; labels give the sinusoidal amplitude $a$ or Gaussian precursor
+scale $\sigma$. Lines connect levels within a construction only as visual
+guides.}
 \label{fig:spectral}
 \end{figure}
 
-\paragraph{Controlled real-content pilot.}
-Before the public landmark benchmarks, we ran a small end-to-end registration
-pilot on real image content with known synthetic warps. A public-domain retinal
-image and an unrestricted immunohistochemistry image were each subjected to
-five smooth known deformations; cases 1--2 selected the external fixed pair
-$(\rho,\alpha)=(0.1,1)$, and held-out cases 3--5 provided six
-image--deformation tests. The task is ordinary linearized diffeomorphic
-registration under the shared solver protocol, measured by inner iterations,
-runtime, intensity MSE, and discrete Jacobians rather than landmarks. The
-one-shot predictor reduced median inner iterations by 44.4\% and median total
-time by 41.7\% (bootstrap 95\% interval $[40.9,42.6]$\%) relative to that
-validation-selected fixed pair. Selection consumed 1.58\% of proposed-method
-runtime, median relative MSE change was $-0.0068$\%, and none of the six
-tested cases had a nonpositive Jacobian. This two-image pilot is a solver
-check rather than a landmark benchmark.
-
-\subsection{Direct spectral optimization comparison}
-This diagnostic uses the CIMA histology pairs below, but replaces four-corner
-tuning by a Song-style spectral search on a coarse surrogate. For each pair,
-the exact variable-coefficient reduced operator was formed on an $8\times8$
-downsampled grid, $\rho$ was optimized numerically, and the resulting pair was
-transferred to the full $256^2$ solve. At each trial penalty, if
-$\{\lambda_j(\rho)\}$ are the eigenvalues of $C_H(\rho)C_G(\rho)$, the exact
-conditional relaxation was computed as
-\[
-\alpha_\rho\in\argmin_{10^{-6}\le\alpha\le2}
-\max_j\left|1-\frac{\alpha}{2}
-+\frac{\alpha}{2}\lambda_j(\rho)\right|.
-\]
-The question is therefore one of tuning overhead and coarse-model transfer,
-not of superiority to full-resolution Song optimization. The spectral search
-required a median 97 spectral-objective evaluations and $2.18$ seconds of
-tuning. Median full-solve iterations were 251, compared with 210 for
-four-corner tuning, and total times were $4.39$ and $2.02$ seconds,
-respectively, with indistinguishable TRE.
-
-\paragraph{Future-work experiment (TODO).}
-On a tractable resolution, directly optimize the true spectral radius over both
-parameters and report the regret
-\[
-\frac{R_{\rm true}(\rho_{\rm 4C},\alpha_{\rm 4C})
--R_{\rm true}(\rho^\star,\alpha^\star)}
-{R_{\rm true}(\rho^\star,\alpha^\star)}.
-\]
-No result for this requested direct-regret experiment is currently reported.
-
-\subsection{CIMA histology benchmark}
-We next turn to real multimodal histology registration. The public
-lung-lesion-3 sample from the CIMA landmark repository \cite{Borovec2018}
-comprises five differently stained sections and all ten unordered pairs.
+\subsection{Real registration benchmarks}
+\subsubsection{CIMA histology}
+The public lung-lesion-3 sample from the CIMA landmark repository
+\cite{Borovec2018} comprises five differently stained sections and all ten
+unordered pairs.
 Images supplied at 5\% scale were converted to a common structural channel and
 resized to $256^2$; landmarks supplied at 50\% scale were rescaled for
 evaluation only. The problem is diffeomorphic registration of these pairs under
 the shared pyramid solver, comparing one-shot four-corner oADMM tuning with
-fixed-parameter, residual-balancing, and BB-proxy baselines on target
-registration error (TRE), iterations, runtime, and discrete Jacobians.
+fixed-parameter, residual-balancing, and BB proxy baselines on target
+registration error (TRE), iterations, runtime, and discrete Jacobians. TRE is
+the Euclidean landmark error after registration.
 
-The fixed comparator $(\rho,\alpha)=(0.1,1)$ was selected on the separate
-real-content pilot and frozen before CIMA. Across five order-alternated
+The external fixed comparator $(\rho,\alpha)=(0.1,1.0)$ was selected using
+separate validation images and then held fixed for CIMA and FIRE. Across five order-alternated
 repetitions of all ten pairs (50 paired runs), four-corner tuning reduced
 median total runtime by 20.1\% (bootstrap 95\% interval 19.4--20.7\%), solver
 time by 23.5\%, and iterations by 30.1\%. Selection used 1.16\% of proposed
@@ -804,29 +879,29 @@ over ten pairs, and of total time over 50 paired runs.}
 \toprule
 Method & Iterations & Time (s) & TRE (px)\\
 \midrule
-Fixed ADMM $(1,1)$ & 1910.5 & 12.09 & 7.3310\\
+Canonical fixed ADMM $(1,1)$ & 1910.5 & 12.09 & 7.3310\\
 Fixed oADMM $(1,1.8)$ & 1129.5 & 7.37 & 7.3308\\
 Residual balancing & 1124.5 & 7.40 & 7.3310\\
 BB proxy & 435.5 & 3.44 & 7.3306\\
-External fixed $(0.1,1)$ & 303.5 & 2.53 & 7.3306\\
+External fixed comparator $(0.1,1.0)$ & 303.5 & 2.53 & 7.3306\\
 \textbf{Four-corner one-shot} & \textbf{210.0} & \textbf{2.02} & 7.3306\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{FIRE retinal benchmark}
-The main end-to-end study uses the public FIRE fundus registration benchmark
+\subsubsection{FIRE retinal registration}
+The public FIRE fundus registration benchmark
 \cite{HernandezMatas2017}: all 134 landmarked pairs (14~A, 49~P, and 71~S),
 converted to a foreground-percentile-normalized green channel and resized to
 $256^2$. Landmarks are used only for evaluation. The problem is retinal
 diffeomorphic registration under identical phase-correlation initialization,
 pyramid, objective, and stopping criteria, with one CPU BLAS/OpenMP thread.
-One-shot four-corner tuning is compared with the external fixed pair, residual
+One-shot four-corner tuning is compared with the external fixed comparator, residual
 balancing, a safeguarded BB proxy, and fixed oADMM on iterations, runtime, TRE,
 and topology.
 
 Across all pairs, median iterations were 245 for one-shot four-corner tuning
-and 412 for the external fixed pair, a paired median reduction of 39.6\%.
+and 412 for the external fixed comparator, a paired median reduction of 39.6\%.
 Median total times were $4.774$ and $6.680$ seconds, a 34.4\% paired reduction
 (bootstrap 95\% interval 30.7--35.7\%); tuning accounted for 1.2\% of proposed
 total time. The safeguarded BB proxy required 623.5 iterations and
@@ -841,14 +916,14 @@ $3.9\times10^{-4}$ pixels, and no method produced a nonpositive Jacobian.
 \caption{FIRE retinal registration: 134 pairs at $256^2$ under identical
 initialization and solver protocol.}
 \label{tab:fire}
-\begin{tabular}{p{0.31\linewidth}rrrr}
+\begin{tabular}{lrrrr}
 \toprule
 Method & Iter. & Time (s) & TRE (px) & TRE/diag. (\%)\\
 \midrule
-External fixed $(0.1,1.0)$ & 412.0 & 6.680 & 5.50178 & 1.51967\\
+External fixed comparator $(0.1,1.0)$ & 412.0 & 6.680 & 5.50178 & 1.51967\\
 Residual balancing & 1434.0 & 22.325 & 5.50211 & 1.51976\\
 BB proxy & 623.5 & 9.435 & 5.50175 & 1.51966\\
-Fixed oADMM $(1.0,1.8)$ & 1529.5 & 23.471 & 5.50194 & 1.51971\\
+Fixed oADMM $(1,1.8)$ & 1529.5 & 23.471 & 5.50194 & 1.51971\\
 \textbf{Four-corner one-shot} & \textbf{245.0} & \textbf{4.774} & 5.50177 & 1.51966\\
 \bottomrule
 \end{tabular}
@@ -859,72 +934,74 @@ separately reported method medians.
 \begin{figure}[H]
 \centering
 \includegraphics[width=.98\linewidth]{../figures/fire256_headline.pdf}
-\caption{FIRE at $256\times256$. \textbf{(a)} Pairwise total-runtime reduction
-relative to the external fixed pair. \textbf{(b)} Inner-iteration reduction.
-\textbf{(c)} TRE agreement. \textbf{(d)} Image-dependent predicted penalty.}
+\caption{FIRE registration at $256\times256$. \textbf{(a)} Pairwise
+total-runtime reduction and \textbf{(b)} inner-iteration reduction relative to
+the external fixed comparator. \textbf{(c)} Difference in TRE between
+four-corner and external fixed parameters. \textbf{(d)} Predicted penalty
+versus image-dependent maximum data curvature.}
 \label{fig:fire}
 \end{figure}
 
 \subsection{One-shot reuse ablation}
-This ablation stays within FIRE but isolates the parameter-reuse policy. On a
-balanced 18-pair FIRE subset we compared the deployed one-shot policy---one
-pair from the initial full-resolution gradient, reused at every pyramid
-level---with retuning at every pyramid level. The question is whether fewer
-inner iterations from retuning reduce end-to-end runtime once tuning cost is
-included. Retuning reduced median inner iterations from 243 to 222 but
-increased median total time from $2.651$ to $3.895$ seconds; median tuning
-time also increased from $0.030$ to $0.110$ seconds. The archived aggregate
-timings do not isolate the remainder of the increase, but they establish that
-fewer iterations did not imply lower end-to-end runtime in this per-level
-pipeline. The reported deployment policy therefore reuses one pair;
-per-outer-iteration retuning was not separately tested.
+On a balanced 18-pair FIRE subset, we compared one-shot reuse of the initial
+full-resolution parameter pair with retuning at every pyramid level. Retuning
+reduced median inner iterations from 243 to 222 but increased median total time
+from $2.651$ to $3.895$ seconds; median parameter-selection time increased from
+$0.030$ to $0.110$ seconds. Under this implementation, per-level retuning
+therefore traded fewer inner iterations for higher end-to-end runtime. The
+reported method uses one-shot reuse; retuning after every outer
+Gauss--Newton linearization was not evaluated.
 
 \section{Discussion}\label{sec:discussion}
-\subsection{Why four corners work}
-The reduction follows from two facts: the separable model supplies independent
-data and regularizer modal coordinates, and the sign of each partial derivative
-in \eqref{eq:theta_derivatives} is independent of the differentiated
-coordinate. Convexity after the affine relaxation map then preserves endpoint
-attainment. This argument is independent of image size.
+\subsection{Why four curvature endpoints can suffice}
+Separability supplies independent data and regularizer modal coordinates.
+Monotonicity along each coordinate line then places the extreme modal values
+at endpoint pairs, and convexity of the relaxed magnitude preserves endpoint
+maximization.
+For registration, the rank-one data Hessian further reduces all data
+curvatures to $\nu$ and
+$\nu+\mu\max_i\norm{q_i}^2$. The resulting four numbers encode the scale
+balance between the data and regularization terms without reference to image
+dimension.
 
-\subsection{Exact model optimum versus full-problem prediction}
-Exact surrogate optimization is not exact variable-coefficient optimization.
-The local frozen model has a Cartesian-product spectrum, but full registration
-generally has $HG\ne GH$. The practical pair is therefore surrogate-optimal and
-predictive for the full iteration. Its strong empirical performance suggests
-that endpoint curvature information captures useful scale balance, especially
-for smooth coefficients, but it is not a theorem about the minimizer of
-$R_{\rm true}$.
+\subsection{Transfer beyond the separable model}
+In the assembled registration operator, spatially varying data blocks interact
+with neighboring regularizer couplings. Smooth coefficient variation can
+retain locally meaningful curvature scales even though no global common modal
+basis exists. This provides a plausible explanation for the observed transfer
+of the surrogate-optimal pair, but not an exact characterization of
+$R_{\rm true}$. The predictor omits global orientation interactions among the
+rank-one blocks.
 
-\subsection{Comparison with Song et al.}
-Song et al.\ address a more general problem class \cite{Song2024}. Their
-parameter optimization pays for repeated spectral-radius evaluation while
-finding $\rho$; neither their method nor ours requires changing $\rho$ during a
-fixed inner solve. Four-corner tuning avoids this search under stronger
-separable assumptions and becomes a predictor outside them. The $8\times8$
-diagnostic quantifies overhead and transfer only.
+\subsection{Expected degradation and computational tradeoff}
+Rapid orientation changes, coefficient discontinuities, and strong
+noncommutativity increase the mismatch between frozen local models and the
+assembled operator. The larger regret in the abrupt-interface experiment is
+consistent with this mechanism. More accurate parameter selection can instead
+use repeated spectral calculations on the large variable-coefficient
+operator. The four-corner predictor occupies the complementary regime: it
+uses stronger structural assumptions to make tuning overhead negligible
+relative to the solve.
 
 \subsection{Limitations}
-Local freezing is approximate, and the rank-one endpoint collapse omits
-orientation interactions. The optional noncommuting certificates discard
-directional cancellation and are conservative. CIMA contains one five-image
-tissue set at reduced resolution; FIRE is evaluated at $256^2$ under a CPU
-protocol and against an external fixed comparator, residual balancing, and a
-safeguarded BB proxy. The BB proxy does not reproduce every adaptive ADMM
-variant. The direct true-spectral-radius regret experiment remains TODO.
-Finally, the theory describes each convex linearized subproblem, not global
-convergence of the outer nonlinear diffeomorphic registration scheme.
+The exact theorem requires an attained Cartesian-product joint modal spectrum;
+registration uses a noncommuting approximation. The experiments are
+two-dimensional and cover FIRE at $256^2$ and one five-image CIMA tissue set at
+reduced resolution. The optional certificates are conservative, and the
+tested BB proxy represents one safeguarded adaptive implementation. Finally,
+the analysis concerns convex linearized subproblems and does not establish
+global convergence of the outer nonlinear registration method.
 
 \section{Conclusion}\label{sec:conclusion}
-For quadratic oADMM with an attained Cartesian-product joint modal spectrum,
-the worst contraction is exactly one of four endpoint factors. Conditional
-relaxation and a finite algebraic penalty set then give search-free joint
-tuning. Spatially varying registration is noncommuting, but local freezing and
-its rank-one Hessian yield an inexpensive one-shot predictor. The FIRE and CIMA
-results show substantial iteration and runtime reductions at matched accuracy
-and observed topology. Future work should quantify direct spectral-radius
-regret at tractable resolutions, extend the method to volumetric registration,
-and tighten optional noncommuting bounds.
+Quadratic oADMM with an attained Cartesian-product joint modal spectrum admits
+an exact four-corner characterization of its worst modal contraction. Analytic
+relaxation and a finite algebraic penalty candidate set then replace iterative
+spectral parameter search. For variable-coefficient registration, local
+freezing and the rank-one optical-flow Hessian turn this result into an
+inexpensive predictor. FIRE and CIMA experiments show reduced iterations and
+runtime with essentially unchanged landmark accuracy and observed topology.
+Further work may address tighter noncommuting analysis, volumetric
+registration, and related splitting methods.
 
 \section*{Declarations}
 \begin{itemize}
@@ -947,66 +1024,193 @@ and edited the manuscript.
 
 \appendix
 \section{Proof of the Reduced Cayley Representation}\label{app:reduced}
-Set $P_H=\rho(H+\rho\Id)^{-1}$ and
-$P_G=\rho(G+\rho\Id)^{-1}$. For standard ADMM, the homogeneous state map is
+Let $(v^\star,w^\star,u^\star)$ be a fixed point and write
+$\widetilde v^k=v^k-v^\star$, with analogous notation for $w$ and $u$.
+Subtracting the fixed-point equations from \eqref{eq:vupdate}--\eqref{eq:uupdate}
+removes the affine term $b$. With
 \[
-\begin{bmatrix}w^{k+1}\\u^{k+1}\end{bmatrix}
-=
-\underbrace{\begin{bmatrix}P_G\\\Id-P_G\end{bmatrix}}_{A}
-\underbrace{\begin{bmatrix}P_H&\Id-P_H\end{bmatrix}}_{B}
-\begin{bmatrix}w^k\\u^k\end{bmatrix}.
+P_H=\rho(H+\rho\Id)^{-1},\qquad
+P_G=\rho(G+\rho\Id)^{-1},
 \]
-The nonzero eigenvalues of $AB$ equal those of
+the homogeneous $v$-update and relaxed variable are
 \[
-BA=P_HP_G+(\Id-P_H)(\Id-P_G).
+\widetilde v^{k+1}=P_H(\widetilde w^k-\widetilde u^k),\qquad
+\widehat{\widetilde v}^{k+1}
+=[\alpha P_H+(1-\alpha)\Id]\widetilde w^k
+-\alpha P_H\widetilde u^k.
 \]
-Since $P_H=(\Id-C_H)/2$ and $P_G=(\Id-C_G)/2$,
+Set
 \[
-BA=\tfrac12(\Id+C_HC_G).
+z^k=\widehat{\widetilde v}^{k+1}+\widetilde u^k
+=[\alpha P_H+(1-\alpha)\Id]\widetilde w^k
++(\Id-\alpha P_H)\widetilde u^k.
 \]
-Inserting \eqref{eq:relaxation} makes the reduced relaxed map
-$(1-\alpha)\Id+\alpha BA$, which is \eqref{eq:Ealpha}.
+The remaining updates are
+$\widetilde w^{k+1}=P_Gz^k$ and
+$\widetilde u^{k+1}=(\Id-P_G)z^k$. Thus, for
+$s^k=[(\widetilde w^k)^\top,(\widetilde u^k)^\top]^\top$,
+\[
+s^{k+1}=AB_\alpha s^k,\qquad
+A=\begin{bmatrix}P_G\\\Id-P_G\end{bmatrix},\qquad
+B_\alpha=
+\begin{bmatrix}
+\alpha P_H+(1-\alpha)\Id&\Id-\alpha P_H
+\end{bmatrix}.
+\]
+Here $A\in\R^{2N\times N}$ and $B_\alpha\in\R^{N\times2N}$. Sylvester's
+determinant identity gives
+\[
+\det(\lambda\Id_{2N}-AB_\alpha)
+=\lambda^N\det(\lambda\Id_N-B_\alpha A).
+\]
+Hence the nonzero eigenvalues of $AB_\alpha$ and $B_\alpha A$ coincide,
+including algebraic multiplicity, and the $2N$-dimensional state map has the
+$N$ eigenvalues of $B_\alpha A$ together with $N$ additional zeros.
+
+Direct multiplication yields
+\[
+\begin{aligned}
+B_\alpha A
+&=(1-\alpha)\Id+\alpha\{
+P_HP_G+(\Id-P_H)(\Id-P_G)\}.
+\end{aligned}
+\]
+Because $P_H=(\Id-C_H)/2$ and $P_G=(\Id-C_G)/2$,
+\[
+P_HP_G+(\Id-P_H)(\Id-P_G)
+=\tfrac12(\Id+C_HC_G).
+\]
+Therefore
+\[
+B_\alpha A
+=\left(1-\frac{\alpha}{2}\right)\Id
++\frac{\alpha}{2}C_HC_G=E_{\rho,\alpha},
+\]
+which proves Proposition~\ref{prop:reduced}.
 
 \section{Proof Details for the Four-Corner Theorem}\label{app:corner}
-For fixed $g$,
+Fix $\rho>0$ and let
+$\mathcal R=[h_-,h_+]\times[g_-,g_+]$. The denominators in
+\eqref{eq:theta_derivatives} are positive. For fixed $g$, the sign of
+$\partial\theta/\partial h$ is the sign of $g-\rho$ and is independent of
+$h$; for fixed $h$, the sign of $\partial\theta/\partial g$ is the sign of
+$h-\rho$ and is independent of $g$. Consequently, replacing either coordinate
+of any point in $\mathcal R$ by a suitable endpoint cannot decrease
+$\theta$, and a possibly different endpoint replacement cannot increase it.
+Applying this argument successively to both coordinates shows
 \[
-\theta(h,g;\rho)=
-\frac{\rho^2+hg}{(\rho+g)(\rho+h)}
+\theta_{\min}:=\min_{\mathcal R}\theta
+=\min_{c\in\operatorname{corners}(\mathcal R)}\theta_c,\qquad
+\theta_{\max}:=\max_{\mathcal R}\theta
+=\max_{c\in\operatorname{corners}(\mathcal R)}\theta_c.
 \]
-has derivative given by \eqref{eq:theta_derivatives}, whose sign is that of
-$g-\rho$ and is constant in $h$. The analogous statement holds after
-interchanging $h$ and $g$. Repeated one-dimensional endpoint maximization
-therefore puts both the minimum and maximum of $\theta$ at rectangle corners.
-Because every value of $\theta$ lies between those extrema and absolute value
-of an affine function is convex, no interior value can exceed both endpoint
-images. Equality with the operator radius additionally requires that the
-maximizing endpoint pair be an actual common mode. Definition~\ref{def:cartesian}
-and attained endpoints guarantee all four such modes.
+Thus every attained modal value $t=\theta(h,g;\rho)$ lies in
+$[\theta_{\min},\theta_{\max}]$.
+
+For fixed $\alpha>0$, the function
+$\phi(t)=|1-\alpha+\alpha t|$ is convex. If
+$t=\lambda\theta_{\min}+(1-\lambda)\theta_{\max}$ with
+$0\le\lambda\le1$, convexity gives
+\[
+\phi(t)\le
+\lambda\phi(\theta_{\min})+(1-\lambda)\phi(\theta_{\max})
+\le\max\{\phi(\theta_{\min}),\phi(\theta_{\max})\}.
+\]
+Both interval endpoints are corner values, so $\Ufour$ bounds the magnitude
+of every modal eigenvalue. If $H$ and $G$ are simultaneously diagonalizable,
+$E_{\rho,\alpha}$ is diagonal in their common modal basis and its spectral
+radius is the largest modal magnitude. When all four endpoint pairs are
+attained common modes, whichever corner realizes the displayed maximum is an
+actual eigenmode, proving equality. Without endpoint attainment, the same
+argument proves only the rectangular upper envelope.
+
+\section{Proof of Optimal Conditional Relaxation}\label{app:relaxation}
+Fix $\rho$ and abbreviate $0\le a\le b\le1$. The four-corner objective is
+\[
+F(\alpha)=
+\max\{|1-\alpha(1-a)|,\ |1-\alpha(1-b)|\},
+\qquad 0<\alpha\le2.
+\]
+If $b=1$, the second endpoint factor equals one for every $\alpha$, while the
+first has magnitude at most one for $0<\alpha\le2$ because $0\le a\le1$.
+Hence $F(\alpha)=1$ throughout the admissible interval, and every relaxation
+is optimal.
+
+Suppose now that $b<1$. The unique unconstrained minimizer is obtained by
+equioscillation of the ordered endpoint factors:
+\[
+1-\alpha(1-a)=-[1-\alpha(1-b)],
+\]
+which gives $\alpha_0=2/(2-a-b)$. This includes $a=b<1$, for which both
+endpoint factors coincide and vanish at $\alpha_0=1/(1-a)$.
+The function $F$ is convex and is nonincreasing up to $\alpha_0$, so imposing
+$\alpha\le2$ gives $\alpha^\star=\min\{2,\alpha_0\}$.
+
+If $a+b\le1$, then $\alpha_0\le2$, and substitution gives
+$F(\alpha^\star)=(b-a)/(2-a-b)$. If $a+b\ge1$, then
+$\alpha_0\ge2$ and the constrained optimizer is $\alpha^\star=2$; because
+$2b-1\ge1-2a$, its value is $F(2)=2b-1$. The formulas agree when
+$a+b=1$.
 
 \section{Proof of Finite Algebraic Selection}\label{app:finite}
-Write
+For a corner $c=(h_c,g_c)$, write
 \[
-\theta_c(\rho)=\frac{\rho^2+h_cg_c}
-{(\rho+h_c)(\rho+g_c)}.
+\theta_c(\rho)=\frac{N_c(\rho)}{D_c(\rho)},\qquad
+N_c(\rho)=\rho^2+p_c,\quad
+D_c(\rho)=\rho^2+s_c\rho+p_c,
 \]
-Identical rational branches are first deduplicated. Every denominator is
-positive for $\rho>0$. Pairwise equality of two distinct branches,
-a transition equality $\theta_i+\theta_j=1$, and stationarity of either branch
-pair in \eqref{eq:reduced_objective} therefore become polynomial equations
-after denominators are cleared. Direct expansion gives degrees at most three,
-four, and six, respectively. Identically zero equations are discarded; if an
-active reduced objective is constant on a piece, its closure endpoints
-represent all of its minimizers needed by the finite candidate set.
+where $s_c=h_c+g_c$ and $p_c=h_cg_c$. Because $\rho>0$ and
+$h_c,g_c\ge0$, every $D_c(\rho)=(\rho+h_c)(\rho+g_c)$ is strictly positive.
+Identical rational branches are deduplicated.
 
-Sort the interval endpoints and all branch intersections. On each resulting
-open interval, one branch realizes $a$ and one realizes $b$. The reduced
-objective is a smooth rational function except where $a+b=1$. A minimum on the
-closure of each piece is consequently attained at an endpoint, at that
-transition, or at a stationary point. Taking the union over all branch pairs
-and retaining roots that satisfy interval membership and branch activity gives
-the finite superset in Theorem~\ref{thm:finite}. Evaluating the original
-four-corner objective filters extraneous roots introduced by denominator
-clearing.
+For distinct branches $i$ and $j$, an intersection satisfies
+\[
+N_iD_j-N_jD_i
+=\rho\big[(s_j-s_i)\rho^2+p_i s_j-p_j s_i\big]=0.
+\]
+Thus its cleared polynomial has degree at most three (and, after removal of
+the inadmissible root $\rho=0$, degree at most two). A relaxation-regime
+transition for a possible active pair satisfies
+\[
+N_iD_j+N_jD_i-D_iD_j=0,
+\]
+a polynomial of degree at most four.
+
+Let $\mathcal Z$ contain the endpoints of $\mathcal I$ and all roots in
+$\mathcal I$ of nonzero pairwise-intersection polynomials. On each connected
+component $J$ of $\mathcal I\setminus\mathcal Z$, the strict ordering of all
+distinct branches is fixed. Hence there are fixed indices $i$ and $j$ such
+that $a=\theta_i$ and $b=\theta_j$ throughout $J$. Partition $J$ further at
+the roots of $a+b=1$. On each resulting open interval, the reduced objective
+is one of
+\[
+F_{ij}^{(1)}(\rho)
+=\frac{\theta_j-\theta_i}{2-\theta_i-\theta_j},
+\qquad
+F_j^{(2)}(\rho)=2\theta_j-1.
+\]
+The denominator in the first regime is at least one and is therefore positive.
+When $b=1$ in the second regime, the objective is the constant one and is
+handled by the piece endpoints.
+
+After common denominators are cleared, $F_{ij}^{(1)}=P/Q$ with
+$\deg P\le3$ and $\deg Q\le4$. Its stationary equation
+$P'Q-PQ'=0$ therefore has degree at most six. The stationary equation for
+$F_j^{(2)}$ has no larger degree, so six is a common upper bound. These degree
+counts also cover coincident curvature endpoints after identical branches
+have been removed.
+
+The reduced objective is continuous on the compact interval $\mathcal I$, so
+it attains a global minimum. On the closure of each smooth piece, a
+nonconstant minimum lies at an endpoint or at an interior stationary point.
+If the objective is constant on a piece, either closure endpoint represents
+its value. Repeated roots do not create additional pieces. Identically zero
+intersection, transition, or stationarity polynomials are discarded; roots
+outside $\mathcal I$ and roots associated with inactive branches are also
+discarded. The union of the remaining endpoints, intersections, transitions,
+and stationary roots is finite and contains a global minimizer. Finally,
+evaluating the original objective at this finite superset removes roots made
+extraneous by denominator clearing and proves Theorem~\ref{thm:finite}.
 
 \begin{thebibliography}{99}
 \bibitem{Ashburner2007}

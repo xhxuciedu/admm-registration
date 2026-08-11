@@ -14,6 +14,7 @@
 \newcommand{\spr}{\varrho}
 \newcommand{\spec}{\operatorname{spec}}
 \newcommand{\diag}{\operatorname{diag}}
+\newcommand{\argmin}{\operatorname*{arg\,min}}
 \newcommand{\Id}{\mathrm{I}}
 \newcommand{\ii}{\mathrm{i}}
 \newcommand{\Ulfa}{U_{\mathrm{patch}}}
@@ -35,7 +36,9 @@ Irvine, California, USA}
 \section{Purpose and notation}
 This supplement develops the optional noncommuting rate certificates, their
 proofs, scaling diagnostics, and implementation details. These constructions
-are not used to choose the deployed four-corner parameters. For symmetric
+are not used to choose the deployed four-corner parameters. We abbreviate the
+alternating direction method of multipliers as ADMM and its over-relaxed form
+as oADMM. For symmetric
 positive semidefinite $H,G\in\R^{dn\times dn}$ and $\rho>0$, define
 \[
 C_A(\rho)=(A-\rho\Id)(A+\rho\Id)^{-1},
@@ -174,6 +177,10 @@ It is convex and piecewise linear. A minimizer belongs to
 \frac{2}{2-a-b}
 \right\}\cap[\alpha_-,\alpha_+].
 \]
+Only finite, defined breakpoints are retained. If $b=1$, the modal maximum is
+identically one on $(0,2]$, so
+$F(\alpha)=1+\alpha\delta/\rho$. Its minimizer is $\alpha_-$ when
+$\delta>0$, and every admissible $\alpha$ is optimal when $\delta=0$.
 
 \section{Exact-regularizer block structure}\label{sec:block}
 The additive certificate replaces both operators. Sharper bounds retain the
@@ -381,7 +388,7 @@ while $|x^*Dx|\le\norm D_2$. The triangle inequality yields
 \eqref{eq:truncated}.
 \end{proof}
 For fixed truncation radius, the comparison matrices are sparse. The kernel
-can be evaluated by FFT in $O(n\log n)$ time and extremal comparison
+can be evaluated by fast Fourier transform (FFT) in $O(n\log n)$ time and extremal comparison
 eigenvalues can be estimated matrix-free. The bound is rigorous at every
 radius, including zero; usefulness depends on tightness.
 
@@ -425,9 +432,12 @@ between two rank-one Hessians is
 \]
 where orientation angles are taken modulo $\pi$. This projector metric, unlike
 $|\sin((\phi_i-\phi_j)/2)|$, is invariant under either sign change
-$q_i\mapsto-q_i$. The archived controlled runs did not store a normalized
-commutator or projector-distance summary, so no quantitative claim based on
-such a statistic is made here.
+$q_i\mapsto-q_i$. For the controlled study, we additionally compute
+\[
+\chi=\frac{\norm{HG-GH}_2}{\norm H_2\norm G_2}.
+\]
+Across the ten cases, $\chi$ ranges from $0.012$ to $0.239$ and has a
+descriptive Pearson correlation of $0.87$ with spectral-radius regret.
 
 \section{Certificate experiments and scaling}\label{sec:certificate_results}
 \subsection{Structured enclosure comparison}
@@ -435,7 +445,7 @@ The controlled suite contains 18 cases. Here $\spr_{\rm act}$ is the true
 spectral radius at the selected parameters, $\spr_{\rm ora}$ is the radius at
 numerically oracle-optimized parameters, and $U$ is the stated rigorous
 enclosure at the selected pair. The enclosure gap is
-$(U-\spr_{\rm act})/\spr_{\rm act}$ and the parameter-selection gap is
+$(U-\spr_{\rm act})/\spr_{\rm act}$ and the spectral-radius regret is
 $(\spr_{\rm act}-\spr_{\rm ora})/\spr_{\rm ora}$. A collapse denotes selection
 at the boundary of the admissible set.
 \begin{table}[H]
@@ -443,7 +453,7 @@ at the boundary of the admissible set.
 \caption{Controlled structured-envelope results; medians over 18 cases.}
 \begin{tabular}{lrrr}
 \toprule
-Method & Enclosure gap & Parameter gap & Collapses\\
+Method & Enclosure gap & Oracle regret & Collapses\\
 \midrule
 Block resolvent & 0.166 & 0.926 & 6\\
 Block Gershgorin & 0.644 & 0.560 & 0\\
@@ -454,29 +464,48 @@ Comparison rectangle & 0.595 & 0.386 & 0\\
 \end{table}
 Every enclosure contained the exact radius. Minimizing the additive bound
 produced over-conservative relaxation and collapsed in six of 18 cases. The
-Perron rectangle retained sign information and had the smallest parameter gap
+Perron rectangle retained sign information and had the smallest oracle regret
 among the signed constructions, but was still too loose for online tuning.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=.62\linewidth]{../figures/certificate_behavior.pdf}
+\caption{Representative noncommuting certificate values compared with the true
+spectral radius on the tractable controlled systems. The bounds remain above
+the exact values but are conservative.}
+\label{fig:certificate_behavior}
+\end{figure}
+
 \subsection{Controlled variable-coefficient predictor tests}
-The ten $3\times3$ cases comprise periodic magnitude variation, smooth
-orientation variation, one sharp orientation interface, and Gaussian-smoothed
-image gradients; nine are smooth. The four-corner predictor attained median
-parameter gaps $0.057$ overall and $0.027$ on the smooth subset, with no
-collapse; the abrupt-interface gap was $0.193$. At the selected parameters,
-the median absolute relative discrepancy between the four-corner envelope and
-the true radius was $1.4\times10^{-15}$, with maximum
-$2.8\times10^{-3}$. The Perron comparison certificate was
+The ten $3\times3$ cases comprise periodic magnitude-only variation,
+orientation-only variation, one $90^\circ$ orientation interface, and three
+random-gradient stress tests. The latter begin with one fixed periodic
+Gaussian white-noise field, apply Gaussian filters with
+$\sigma\in\{0.6,1.0,1.6\}$ pixels, differentiate, and rescale each gradient
+field to root-mean-square magnitude $0.4$. The filtering scale therefore
+describes the precursor scalar field, not monotone smoothness of the normalized
+rank-one Hessian. These cases vary gradient magnitude and orientation jointly.
+
+The four-corner predictor attained median spectral-radius regret $0.057$ over
+all cases, with no collapse. Regret was $0.003$--$0.087$ for the
+single-factor magnitude and orientation constructions, $0.193$ for the abrupt
+interface, and $0.238$--$0.296$ for the random-gradient fields. Their
+normalized commutators were respectively $0.012$--$0.139$, $0.166$, and
+$0.171$--$0.239$. At the selected parameters, the median absolute
+relative discrepancy between the four-corner envelope and the true radius was
+$1.4\times10^{-15}$, with maximum $2.8\times10^{-3}$. The latter is a
+pointwise comparison and does not imply that the surrogate and true spectral
+objectives have the same minimizer. The Perron comparison certificate was
 below one in all ten cases. Its median enclosure gap was $1.29$, establishing
-validity while illustrating conservatism. A normalized commutator-magnitude
-analysis remains TODO because that diagnostic was not stored by the archived
-runs.
+validity while illustrating conservatism.
 
 \subsection{Truncation scaling}
 The truncated-kernel certificate showed no violation in 20 tests spanning
 $8^2$ through $64^2$ grids and five truncation radii. Actual matrix-free
 spectral radii were approximately $0.269$, while certificate values ranged from
 $0.638$ to $0.681$, corresponding to relative gaps $1.38$--$1.54$. The most
-expensive $64^2$ retained-radius case took $81.4$ seconds on CPU. A relaxed
+expensive $64^2$ retained-radius case took $81.4$ seconds on a central
+processing unit (CPU). A relaxed
 $128^2$ Arnoldi certificate run did not complete within its allocated
 diagnostic window. The sparse representation scales in principle, but the
 current eigensolver and bounds are not practical registration-time
@@ -502,12 +531,13 @@ displacement is halved until the check passes. This numerical safeguard does
 not constitute a global diffeomorphism theorem.
 
 \subsection{Baselines}
-The external fixed pair $(\rho,\alpha)=(0.1,1)$ was selected using the
+The external fixed comparator $(\rho,\alpha)=(0.1,1.0)$ was selected using the
 controlled public-image pilot, not FIRE or CIMA, and was then frozen. Residual
 balancing starts at $\rho=1$, updates the penalty from primal and dual residual
-imbalance, and rescales the dual variable. The BB comparison is a safeguarded
-Barzilai--Borwein penalty proxy with clipping and periodic updates. Fixed
-oADMM uses $(1,1.8)$. Exact update intervals and safeguards are implemented in
+imbalance, and rescales the dual variable. The Barzilai--Borwein (BB)
+comparison is a safeguarded penalty proxy with clipping and periodic updates. Fixed
+oADMM uses $(1,1.8)$, while canonical fixed ADMM uses $(1,1)$. Exact update
+intervals and safeguards are implemented in
 \texttt{src/registration2d.py}.
 
 \subsection{Patch and symbol construction}
@@ -541,12 +571,12 @@ g_+=\left(\gamma+\frac{4\beta d}{(\Delta x)^2}\right)^p.
 \subsection{Controlled real-content pilot}
 A public-domain retinal image and an unrestricted immunohistochemistry image
 were each subjected to five smooth known deformations. Cases 1--2 selected the
-single external fixed pair; held-out cases 3--5 were not used for tuning and
+single external fixed comparator; held-out cases 3--5 were not used for tuning and
 gave six image--deformation tests. Across five order-alternated repeats (30
 paired runs), one-shot tuning reduced median inner
 iterations by 44.4\% and median total time by 41.7\% (bootstrap 95\% interval
 $[40.9,42.6]$\%). Selection consumed 1.58\% of proposed runtime, median
-relative MSE change was $-0.0068$\%, and no tested case had a nonpositive
+relative mean squared error (MSE) change was $-0.0068$\%, and no tested case had a nonpositive
 Jacobian.
 
 \begin{table}[H]
@@ -566,6 +596,26 @@ Nonpositive Jacobians & 0/6 & 0\\
 \end{tabular}
 \end{table}
 
+\subsection{Coarse direct spectral optimization diagnostic}
+For each CIMA pair, a variable-coefficient reduced operator was assembled on an
+$8\times8$ downsampled grid and its penalty was optimized numerically. At each
+trial $\rho$, if $\{\lambda_j(\rho)\}$ are the eigenvalues of
+$C_H(\rho)C_G(\rho)$, the conditional relaxation was computed from
+\[
+\alpha_\rho\in\argmin_{10^{-6}\le\alpha\le2}
+\max_j\left|1-\frac{\alpha}{2}
++\frac{\alpha}{2}\lambda_j(\rho)\right|.
+\]
+The resulting pair was transferred to the full $256^2$ registration. The
+coarse spectral search required a median 97 spectral-objective evaluations and
+$2.18$ seconds of parameter-selection time. Median full-solve iterations were
+251, compared with 210 for four-corner tuning, and total times were $4.39$ and
+$2.02$ seconds, respectively; target registration error (TRE) was
+indistinguishable. This diagnostic quantifies repeated spectral-evaluation
+overhead on a tractable surrogate. Parameter transfer from a coarse operator
+is distinct from direct spectral optimization of the full-resolution
+variable-coefficient system.
+
 \subsection{CIMA preprocessing and initialization}
 The public lung-lesion-3 sample comprises five differently stained sections
 and all ten unordered pairs. Images supplied at 5\% scale were converted to a
@@ -574,14 +624,15 @@ histogram equalization (CLAHE), Sobel-magnitude extraction, Gaussian smoothing,
 and fixed percentile normalization, and were then resized to $256^2$. Manual
 landmarks supplied at 50\% scale were rescaled geometrically and used only for
 evaluation. Each method used the same image-only robust translation
-initialization selected from phase-correlation, centroid, and clustered SIFT
-proposals on a $128^2$ image.
+initialization selected from phase correlation, centroid alignment, and
+clustered scale-invariant feature transform (SIFT) proposals on a $128^2$
+image.
 
 \subsection{FIRE parameter summary}
 The audited FIRE result contains 134 pairs and five methods per pair. Percentage
 reductions are computed pairwise before aggregation. For one-shot four-corner
-tuning, median $\rho_{\rm 4C}=0.1008$ (IQR $0.0397$, range
-$0.0688$--$0.1402$) and median $\alpha_{\rm 4C}=1.5699$ (IQR $0.1287$, range
+tuning, median $\rho_{\rm 4C}=0.1008$ (interquartile range (IQR) $0.0397$,
+range $0.0688$--$0.1402$) and median $\alpha_{\rm 4C}=1.5699$ (IQR $0.1287$, range
 $1.4483$--$1.6883$). The median $h_+$ is $0.2249$.
 
 \subsection{One-shot reuse}
@@ -597,12 +648,13 @@ The audited runs began at commit
 seed 20260806 and \texttt{configs/real2d\_v1.yaml}. The environment used
 Python 3.10.9, NumPy 2.2.6, SciPy 1.15.3, pandas 2.3.3,
 Matplotlib 3.10.9, and scikit-image 0.25.2 on two Intel Xeon Gold 5218 CPUs;
-the experiments were CPU-only. Timed registrations used one BLAS/OpenMP thread.
+the experiments were CPU-only. Timed registrations used one Basic Linear
+Algebra Subprograms (BLAS)/OpenMP thread.
 Exact commands and the complete validation sequence are recorded in
 \texttt{results/real2d\_v1/reproducibility\_log.md}. Raw pair-level outputs,
 result schemas, and regeneration scripts are stored alongside that log. FIRE
 preprocessing uses a foreground-percentile-normalized green channel; CIMA uses
-the structural-channel pipeline above. Supplied landmarks are used only for
+the structural-channel processing described above. Supplied landmarks are used only for
 evaluation.
 
 FIRE and CIMA are public datasets subject to their original licenses. Raw FIRE

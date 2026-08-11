@@ -94,9 +94,32 @@ def plot_headline(data: pd.DataFrame, strongest: str) -> None:
         for box in bp["boxes"]: box.set(facecolor="#9ecae1", edgecolor="#0072b2")
         axis.axhline(0, color="0.35", lw=.8); axis.set(title=title, ylabel=ylabel)
         axis.grid(axis="y", color=".9", lw=.6)
-    ax[1, 0].scatter(b.median_tre, p.median_tre, s=15, alpha=.72, color="#0072b2", edgecolors="none")
-    lim=[min(b.median_tre.min(),p.median_tre.min()), max(b.median_tre.max(),p.median_tre.max())]
-    ax[1, 0].plot(lim,lim,color=".3",lw=.9); ax[1, 0].set(title="Landmark accuracy", xlabel="Fixed-pair TRE (px)", ylabel="Four-corner TRE (px)", xlim=lim, ylim=lim, aspect="equal")
+    tre_delta = p.median_tre - b.median_tre
+    tre_samples = [tre_delta[p.group == g].to_numpy() for g in groups]
+    bp = ax[1, 0].boxplot(
+        tre_samples,
+        tick_labels=[f"{g}\n(n={len(x)})" for g, x in zip(groups, tre_samples)],
+        patch_artist=True,
+        showfliers=False,
+        medianprops={"color": "black", "linewidth": 1.4},
+    )
+    for box in bp["boxes"]:
+        box.set(facecolor="#c7e9c0", edgecolor="#238b45")
+    rng = np.random.default_rng(20260811)
+    for j, values in enumerate(tre_samples, 1):
+        ax[1, 0].scatter(
+            j + rng.normal(0, .045, len(values)),
+            values,
+            s=12,
+            alpha=.55,
+            color="#238b45",
+            edgecolors="none",
+        )
+    ax[1, 0].axhline(0, color=".35", lw=.8)
+    ax[1, 0].set(
+        title="Landmark-accuracy difference",
+        ylabel=r"$\Delta$TRE: four-corner $-$ fixed (px)",
+    )
     for group, color in zip(groups,["#0072b2","#d55e00","#009e73"]):
         z=p[p.group==group]; ax[1,1].scatter(z.h_plus,z.rho_initial,s=18,alpha=.75,label=group,color=color,edgecolors="none")
     ax[1,1].set(title="Image-dependent penalty selection",xlabel=r"Maximum curvature $h_+$",ylabel=r"Predicted penalty $\rho_{\mathrm{4C}}$")

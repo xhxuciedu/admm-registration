@@ -37,9 +37,8 @@ def algebraic_figure() -> None:
     error = np.array([row["absolute_error"] for row in constant])
     regimes = pd.read_csv(RAW / "variation_regimes.csv")
     predictor = regimes[regimes.method == "pixel_curvature_predictor"].copy()
-    certificate = regimes[regimes.method == "predict_then_certify"].copy()
 
-    fig, axes = plt.subplots(1, 3, figsize=(7.25, 2.45), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=(7.25, 2.75), constrained_layout=True)
     ax = axes[0]
     ax.semilogy(n, np.maximum(error, 1e-17), "o-", color=COLORS["blue"], lw=1.7, ms=5)
     ax.axhline(1e-14, color=COLORS["gray"], ls="--", lw=.9)
@@ -51,33 +50,67 @@ def algebraic_figure() -> None:
     panel_label(ax, "(a)")
 
     ax = axes[1]
-    all_gap = predictor.parameter_gap.to_numpy()
-    smooth_gap = predictor[predictor.smooth].parameter_gap.to_numpy()
-    box = ax.boxplot([all_gap, smooth_gap], tick_labels=["all", "smooth"], widths=.55,
-                     patch_artist=True, showfliers=True,
-                     medianprops={"color": "black", "linewidth": 1.2})
-    for p, color in zip(box["boxes"], [COLORS["light"], "#BFE3D0"]):
-        p.set(facecolor=color, edgecolor=COLORS["gray"])
-    rng = np.random.default_rng(20260806)
-    for j, values in enumerate([all_gap, smooth_gap], 1):
-        ax.scatter(j + rng.normal(0, .045, len(values)), values, s=15, alpha=.75, color=COLORS["blue"])
-    ax.axhline(.10, color=COLORS["orange"], ls="--", lw=1.1, label="quality gate")
-    ax.set(title="Predictor quality", ylabel="Spectral-radius regret")
-    ax.legend(frameon=False, loc="upper right")
+    regime_styles = [
+        ("magnitude", "Magnitude only", "o", COLORS["blue"]),
+        ("orientation", "Orientation only", "s", COLORS["green"]),
+        ("discontinuous", r"$90^\circ$ interface", "D", COLORS["orange"]),
+        ("smoothed", "Random gradient", "^", COLORS["purple"]),
+    ]
+    for regime, label, marker, color in regime_styles:
+        values = predictor[predictor.regime == regime].sort_values("level")
+        x = values.normalized_commutator.to_numpy()
+        regret = values.parameter_gap.to_numpy()
+        if len(values) > 1:
+            ax.plot(x, regret, color=color, lw=.9, alpha=.55)
+        ax.scatter(x, regret, s=34, color=color, marker=marker, label=label)
+        for xi, yi, level in zip(x, regret, values.level):
+            if regime in {"magnitude", "orientation"}:
+                text = rf"$a={level:g}$"
+            elif regime == "smoothed":
+                text = rf"$\sigma={level:g}$"
+            else:
+                text = ""
+            if text:
+                ax.annotate(text, (xi, yi), xytext=(3, 3),
+                            textcoords="offset points", fontsize=6.5, color=color)
+    ax.set(
+        title="Regret versus noncommutativity",
+        xlabel=r"Normalized commutator $\chi$",
+        ylabel="Oracle spectral-radius regret",
+        xlim=(0, .26),
+        ylim=(0, .32),
+    )
+    ax.grid(color=".9", lw=.6)
+    ax.legend(frameon=False, fontsize=7, loc="upper left")
     panel_label(ax, "(b)")
 
-    ax = axes[2]
+    fig.savefig(FIG / "algebraic_validation.pdf", bbox_inches="tight")
+    plt.close(fig)
+
+
+def certificate_figure() -> None:
+    regimes = pd.read_csv(RAW / "variation_regimes.csv")
+    certificate = regimes[regimes.method == "predict_then_certify"].copy()
     actual = certificate.actual_radius.to_numpy()
     bound = certificate.bound.to_numpy()
-    ax.scatter(actual, bound, s=35, color=COLORS["green"], edgecolor="white", linewidth=.5)
+
+    fig, ax = plt.subplots(figsize=(4.2, 3.15), constrained_layout=True)
+    ax.scatter(actual, bound, s=35, color=COLORS["green"],
+               edgecolor="white", linewidth=.5)
     lo, hi = 0, max(1.02, 1.05 * bound.max())
-    ax.plot([lo, hi], [lo, hi], color=COLORS["gray"], ls="--", lw=1, label="exact")
-    ax.axhline(1, color=COLORS["orange"], ls=":", lw=1, label="convergence threshold")
-    ax.set(xlim=(lo, hi), ylim=(lo, hi), title="Certificate behavior",
-           xlabel=r"True spectral radius $\varrho(E_{\rho,\alpha})$", ylabel="Rigorous bound")
+    ax.plot([lo, hi], [lo, hi], color=COLORS["gray"], ls="--", lw=1,
+            label="exact")
+    ax.axhline(1, color=COLORS["orange"], ls=":", lw=1,
+               label="convergence threshold")
+    ax.set(
+        xlim=(lo, hi),
+        ylim=(lo, hi),
+        title="Noncommuting certificate behavior",
+        xlabel=r"True spectral radius $\varrho(E_{\rho,\alpha})$",
+        ylabel="Rigorous upper bound",
+    )
     ax.legend(frameon=False, loc="upper left")
-    panel_label(ax, "(c)")
-    fig.savefig(FIG / "algebraic_validation.pdf", bbox_inches="tight")
+    fig.savefig(FIG / "certificate_behavior.pdf", bbox_inches="tight")
     plt.close(fig)
 
 
@@ -139,4 +172,5 @@ if __name__ == "__main__":
     FIG.mkdir(exist_ok=True)
     style()
     algebraic_figure()
+    certificate_figure()
     registration_figure()

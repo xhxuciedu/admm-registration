@@ -33,6 +33,8 @@ def main():
  for regime,level,q,smooth in fields(cfg):
   blocks=np.einsum('...i,...j->...ij',q,q).reshape(-1,2,2)+.05*np.eye(2)[None]; mb=blocks.mean(0); surrogate=np.repeat(mb[None],len(blocks),axis=0)
   h=data_hessian(q,damping=.05).toarray(); corners=np.array([[a,b] for a in np.linalg.eigvalsh(mb) for b in (ge.min(),ge.max())])
+  commutator=h@g-g@h
+  normalized_commutator=np.linalg.norm(commutator,2)/(np.linalg.norm(h,2)*np.linalg.norm(g,2))
   pixel_corners=np.array([[a,b] for a in np.unique(np.round(np.linalg.eigvalsh(blocks),14)) for b in (ge.min(),ge.max())])
   prho,_,_=select_rho(pixel_corners,cfg['rho_interval'],0);palpha,_,_=select_alpha(pixel_corners,prho,cfg['alpha_interval'],0)
   objective=lambda z:spectral_radius(reduced_matrix(h,g,np.exp(z[0]),z[1]))
@@ -53,7 +55,7 @@ def main():
   for method,fn in selectors.items():
    bound,rho,alpha=fn(); actual=spectral_radius(reduced_matrix(h,g,rho,alpha))
    certified=method not in ('local_predictor','pixel_curvature_predictor')
-   rows.append(dict(regime=regime,level=level,smooth=smooth,method=method,rho=rho,alpha=alpha,bound=bound,actual_radius=actual,oracle_radius=ora,envelope_gap=(bound-actual)/actual,parameter_gap=(actual-ora)/ora,certificate_valid=(actual<=bound+1e-10) if certified else False,certified=certified,collapsed=alpha<.01 or rho>=99.9))
+   rows.append(dict(regime=regime,level=level,smooth=smooth,method=method,rho=rho,alpha=alpha,bound=bound,actual_radius=actual,oracle_radius=ora,envelope_gap=(bound-actual)/actual,parameter_gap=(actual-ora)/ora,normalized_commutator=normalized_commutator,certificate_valid=(actual<=bound+1e-10) if certified else False,certified=certified,collapsed=alpha<.01 or rho>=99.9))
  out=ROOT/'results'/'raw';out.mkdir(parents=True,exist_ok=True)
  with (out/'variation_regimes.csv').open('w',newline='') as f:w=csv.DictWriter(f,fieldnames=rows[0]);w.writeheader();w.writerows(rows)
  df=pd.DataFrame(rows); summary={}
