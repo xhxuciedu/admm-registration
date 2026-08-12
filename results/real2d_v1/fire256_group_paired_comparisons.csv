@@ -1,7 +1,10 @@
 group,baseline,baseline_label,n,median_runtime_difference_seconds,median_runtime_improvement_pct,runtime_improvement_iqr_pct,runtime_improvement_bootstrap_95_pct,faster_pair_fraction,median_iteration_improvement_pct,iteration_improvement_bootstrap_95_pct,median_tre_difference_px,max_absolute_tre_difference_px
-A,manual_external,"Validation-selected fixed
+A,manual_external,"Validation-selected
+fixed comparator
 (0.1, 1.0)",14,4.9076907243579635,33.8244086000596,27.706094441457445,"[16.751702932229072, 45.07934000442101]",0.9285714285714286,37.38273458770354,"[36.507936507936506, 40.7942238267148]",-1.1745517992434173e-05,0.0003485371359492895
-P,manual_external,"Validation-selected fixed
+P,manual_external,"Validation-selected
+fixed comparator
 (0.1, 1.0)",49,2.1477625388652086,31.756206652927595,11.59509888095456,"[30.02019558590161, 35.53450780432308]",0.9591836734693877,36.53395784543326,"[35.55555555555556, 38.670694864048336]",-6.265073636768648e-06,0.0002534083831946532
-S,manual_external,"Validation-selected fixed
+S,manual_external,"Validation-selected
+fixed comparator
 (0.1, 1.0)",71,1.6615316402167082,35.485351569312876,26.958529905493887,"[28.529391935044245, 38.133076485805674]",0.8873239436619719,42.07492795389049,"[40.54054054054054, 43.75]",-2.5512855247100674e-05,0.0003901438713946881

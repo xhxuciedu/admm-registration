@@ -2,13 +2,13 @@
 
 ## Files
 
-- [ ] Upload `upload/JMIV_main.pdf`.
-- [ ] Upload `upload/JMIV_main_source.zip` as editable manuscript source.
-- [ ] Upload `upload/ESM_1_Supplementary_Information.pdf` as Online Resource 1.
-- [ ] Upload or paste the cover letter in `upload/JMIV_cover_letter.pdf` or
-  `upload/JMIV_cover_letter.txt`.
-- [ ] Retain `JMIV_submission_metadata.md` and `JMIV_requirements.md` while
-  entering portal metadata.
+- [ ] Upload `main/JMIV_main.pdf`.
+- [ ] Upload `JMIV_main_source.zip` as editable manuscript source.
+- [ ] Upload `supplement/ESM_1_Supplementary_Information.pdf` as Online Resource 1.
+- [ ] Upload or paste the cover letter in `cover_letter/JMIV_cover_letter.pdf`
+  or `cover_letter/JMIV_cover_letter.txt`.
+- [ ] Use `JMIV_submission_metadata.md` and `JMIV_requirements.md` when entering
+  portal metadata.
 
 ## Portal metadata
 
@@ -24,9 +24,8 @@
 ## Pre-submit quality control
 
 - [ ] Rebuild with `python scripts/prepare_jmiv_submission.py`.
-- [ ] Extract the source ZIP into a clean directory and compile
-  `JMIV_main.tex` with `pdflatex` twice.
+- [ ] Extract `JMIV_main_source.zip` into a clean directory and compile
+  `JMIV_main.tex` with `pdflatex` / `bibtex` / `pdflatex`×2.
 - [ ] Open main PDF, supplement, and cover letter at normal viewing size.
-- [ ] Confirm all figure labels, citations, tables, and Online Resource 1
-  reference are visible.
+- [ ] Confirm figure labels, citations, tables, and Online Resource 1 references.
 - [ ] Complete every item in `JMIV_SUBMISSION_TODO.md`.

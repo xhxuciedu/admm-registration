@@ -118,7 +118,7 @@ def plot_headline(data: pd.DataFrame, strongest: str) -> None:
     ax[1, 0].axhline(0, color=".35", lw=.8)
     ax[1, 0].set(
         title="Landmark-accuracy difference",
-        ylabel=r"$\Delta$TRE: 4C $-$ validation-selected fixed (px)",
+        ylabel=r"$\Delta$TRE (px)",
     )
     for group, color in zip(groups,["#0072b2","#d55e00","#009e73"]):
         z=p[p.group==group]; ax[1,1].scatter(z.h_plus,z.rho_initial,s=18,alpha=.75,label=group,color=color,edgecolors="none")

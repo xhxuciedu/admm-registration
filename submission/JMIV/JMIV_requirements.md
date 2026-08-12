@@ -1,36 +1,26 @@
 # JMIV submission requirements audit
 
-Verified 2026-08-10 against the official [JMIV submission guidelines](https://link.springer.com/journal/10851/submission-guidelines) and [Springer Nature LaTeX author support](https://www.springernature.com/la/authors/campaigns/latex-author-support).
+Verified against the official JMIV submission guidelines and Springer Nature
+LaTeX author support.
 
 | Requirement | Package status |
 |---|---|
 | Article category | Prepared as a Regular Paper. |
-| Title page | Contains author name, affiliation, city/state/country, and e-mail. Telephone is recorded in metadata; fax is not applicable. |
-| Abstract | 128 words; JMIV requires 100--150 words. |
-| Keywords | Five indexing keywords are supplied; JMIV requests four to six. |
-| Citations | Numbered citations are used in the manuscript. |
-| Editable sources | `upload/JMIV_main_source.zip` includes `.tex`, `.cls`, and figures. |
-| PDF | `upload/JMIV_main.pdf` is compiled with `pdflatex`. |
-| Figures | `Fig1.pdf` and `Fig2.pdf` are vector PDFs with embedded text.  The journal prefers EPS for vector art; PDF is `pdflatex`-native and included with the source. |
-| Supplement | `upload/ESM_1_Supplementary_Information.pdf` contains title, journal, author, affiliation, and e-mail, and the main text cites it as Online Resource 1. |
-| Declarations | Author-contribution and competing-interest information must be supplied through the submission interface. |
+| Title page | Author names, affiliation, city/state/country, and e-mail. |
+| Abstract | Taken from `paper/paper.tex` (target 100--150 words). |
+| Keywords | Five indexing keywords. |
+| Citations | Numbered (`sn-mathphys-num`). |
+| Editable sources | Flat `JMIV_main_source.zip` with `.tex`, `.cls`, `.bst`, `.bib`, and figures. |
+| PDF | `main/JMIV_main.pdf` compiled with `pdflatex`. |
+| Figures | Vector PDF figures with embedded text (`Fig1.pdf`, `Fig2.pdf`). |
+| Supplement | `supplement/ESM_1_Supplementary_Information.pdf`; main text cites Online Resource 1. |
+| Declarations | Included in the manuscript and mirrored for the submission interface. |
 
-## Template and `iicol` configuration
+## Template configuration
 
-The original official template downloaded for this package is Springer Nature
-SN Article Template v3.1 (December 2024), preserved unchanged in
-`template_original/sn-article-template/`. Its supplied `sn-jnl.cls` defines
-both the `iicol` layout option and the `sn-mathphys-num` numbered
-mathematical-physical-science reference style. The submitted source uses the
-official compiling configuration
-`\documentclass[pdflatex,iicol,sn-mathphys-num]{sn-jnl}` requested by the JMIV
-guideline page.
+Official Springer Nature SN Article Template (`sn-jnl.cls`) with
+`\documentclass[pdflatex,iicol,sn-mathphys-num]{sn-jnl}`.
 
-## Submission-system notes
+## Notes
 
-Springer Nature's author-support page requests a `pdflatex`-compatible ZIP for
-SNAPP and warns that subdirectories can cause missing-figure errors.  The
-upload ZIP is deliberately flat.  The official JMIV guideline page requires
-that submission imply originality, exclusive consideration, required approvals,
-and permissions for previously published material.  Those are author
-attestations, not claims this package can make automatically.
+SNAPP may fail on nested source directories; the upload ZIP is deliberately flat.

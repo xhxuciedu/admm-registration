@@ -1,0 +1,346 @@
+%% BioMed_Central_Bib_Style_v1.01
+
+\begin{thebibliography}{18}
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
+
+%%% 1
+\bibitem[\protect\citeauthoryear{Boyd et~al.}{2011}]{Boyd2010}
+\begin{barticle}
+\bauthor{\bsnm{Boyd}, \binits{S.}},
+\bauthor{\bsnm{Parikh}, \binits{N.}},
+\bauthor{\bsnm{Chu}, \binits{E.}},
+\bauthor{\bsnm{Peleato}, \binits{B.}},
+\bauthor{\bsnm{Eckstein}, \binits{J.}}:
+\batitle{Distributed optimization and statistical learning via the alternating
+  direction method of multipliers}.
+\bjtitle{Foundations and Trends in Machine Learning}
+\bvolume{3}(\bissue{1}),
+\bfpage{1}--\blpage{122}
+(\byear{2011})
+\doiurl{10.1561/2200000016}
+\end{barticle}
+\endbibitem
+
+%%% 2
+\bibitem[\protect\citeauthoryear{Ghadimi et~al.}{2015}]{Ghadimi2015}
+\begin{barticle}
+\bauthor{\bsnm{Ghadimi}, \binits{E.}},
+\bauthor{\bsnm{Teixeira}, \binits{A.}},
+\bauthor{\bsnm{Shames}, \binits{I.}},
+\bauthor{\bsnm{Johansson}, \binits{M.}}:
+\batitle{Optimal parameter selection for the alternating direction method of
+  multipliers ({ADMM}): Quadratic problems}.
+\bjtitle{IEEE Transactions on Automatic Control}
+\bvolume{60}(\bissue{3}),
+\bfpage{644}--\blpage{658}
+(\byear{2015})
+\doiurl{10.1109/TAC.2014.2354892}
+\end{barticle}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Teixeira et~al.}{2016}]{Teixeira2016}
+\begin{barticle}
+\bauthor{\bsnm{Teixeira}, \binits{A.}},
+\bauthor{\bsnm{Ghadimi}, \binits{E.}},
+\bauthor{\bsnm{Shames}, \binits{I.}},
+\bauthor{\bsnm{Sandberg}, \binits{H.}},
+\bauthor{\bsnm{Johansson}, \binits{M.}}:
+\batitle{The {ADMM} algorithm for distributed quadratic problems: Parameter
+  selection and constraint preconditioning}.
+\bjtitle{IEEE Transactions on Signal Processing}
+\bvolume{64}(\bissue{2}),
+\bfpage{290}--\blpage{305}
+(\byear{2016})
+\doiurl{10.1109/TSP.2015.2480041}
+\end{barticle}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{Giselsson and Boyd}{2017}]{GiselssonBoyd2017}
+\begin{barticle}
+\bauthor{\bsnm{Giselsson}, \binits{P.}},
+\bauthor{\bsnm{Boyd}, \binits{S.}}:
+\batitle{Linear convergence and metric selection for {Douglas--Rachford}
+  splitting and {ADMM}}.
+\bjtitle{IEEE Transactions on Automatic Control}
+\bvolume{62}(\bissue{2}),
+\bfpage{532}--\blpage{544}
+(\byear{2017})
+\doiurl{10.1109/TAC.2016.2564160}
+\end{barticle}
+\endbibitem
+
+%%% 5
+\bibitem[\protect\citeauthoryear{Wohlberg}{2017}]{Wohlberg2017}
+\begin{botherref}
+\oauthor{\bsnm{Wohlberg}, \binits{B.}}:
+{ADMM} Penalty Parameter Selection by Residual Balancing.
+arXiv:1704.06209
+(2017).
+\url{https://arxiv.org/abs/1704.06209}
+\end{botherref}
+\endbibitem
+
+%%% 6
+\bibitem[\protect\citeauthoryear{Xu et~al.}{2017}]{Xu2017}
+\begin{bchapter}
+\bauthor{\bsnm{Xu}, \binits{Z.}},
+\bauthor{\bsnm{Figueiredo}, \binits{M.A.T.}},
+\bauthor{\bsnm{Goldstein}, \binits{T.}}:
+\bctitle{Adaptive {ADMM} with spectral penalty parameter selection}.
+In: \beditor{\bsnm{Singh}, \binits{A.}},
+\beditor{\bsnm{Zhu}, \binits{J.}} (eds.)
+\bbtitle{Proceedings of the 20th International Conference on Artificial
+  Intelligence and Statistics}.
+\bsertitle{Proceedings of Machine Learning Research},
+vol. \bseriesno{54},
+pp. \bfpage{718}--\blpage{727}.
+\bpublisher{PMLR}, \blocation{???}
+(\byear{2017}).
+\burl{https://proceedings.mlr.press/v54/xu17a.html}
+\end{bchapter}
+\endbibitem
+
+%%% 7
+\bibitem[\protect\citeauthoryear{Song et~al.}{2024}]{Song2024}
+\begin{barticle}
+\bauthor{\bsnm{Song}, \binits{J.}},
+\bauthor{\bsnm{Lu}, \binits{W.}},
+\bauthor{\bsnm{Lei}, \binits{Y.}},
+\bauthor{\bsnm{Tang}, \binits{Y.}},
+\bauthor{\bsnm{Pan}, \binits{Z.}},
+\bauthor{\bsnm{Duan}, \binits{J.}}:
+\batitle{Optimizing {ADMM} and over-relaxed {ADMM} parameters for linear
+  quadratic problems}.
+\bjtitle{Proceedings of the AAAI Conference on Artificial Intelligence}
+\bvolume{38}(\bissue{8}),
+\bfpage{8117}--\blpage{8125}
+(\byear{2024})
+\doiurl{10.1609/aaai.v38i8.28651}
+\end{barticle}
+\endbibitem
+
+%%% 8
+\bibitem[\protect\citeauthoryear{Chan and Elman}{1989}]{ChanElman1989}
+\begin{barticle}
+\bauthor{\bsnm{Chan}, \binits{T.F.}},
+\bauthor{\bsnm{Elman}, \binits{H.C.}}:
+\batitle{{Fourier} analysis of iterative methods for elliptic problems}.
+\bjtitle{SIAM Review}
+\bvolume{31}(\bissue{1}),
+\bfpage{20}--\blpage{49}
+(\byear{1989})
+\doiurl{10.1137/1031002}
+\end{barticle}
+\endbibitem
+
+%%% 9
+\bibitem[\protect\citeauthoryear{Wienands and
+  Joppich}{2005}]{WienandsJoppich2005}
+\begin{bbook}
+\bauthor{\bsnm{Wienands}, \binits{R.}},
+\bauthor{\bsnm{Joppich}, \binits{W.}}:
+\bbtitle{Practical Fourier Analysis for Multigrid Methods}.
+\bpublisher{Chapman \& Hall/CRC},
+\blocation{Boca Raton, FL}
+(\byear{2005})
+\end{bbook}
+\endbibitem
+
+%%% 10
+\bibitem[\protect\citeauthoryear{Rodrigo et~al.}{2019}]{Rodrigo2019}
+\begin{barticle}
+\bauthor{\bsnm{Rodrigo}, \binits{C.}},
+\bauthor{\bsnm{Gaspar}, \binits{F.J.}},
+\bauthor{\bsnm{Zikatanov}, \binits{L.T.}}:
+\batitle{On the validity of the local {Fourier} analysis}.
+\bjtitle{Journal of Computational Mathematics}
+\bvolume{37}(\bissue{3}),
+\bfpage{340}--\blpage{348}
+(\byear{2019})
+\doiurl{10.4208/jcm.1803-m2017-0294}
+\end{barticle}
+\endbibitem
+
+%%% 11
+\bibitem[\protect\citeauthoryear{Kumar et~al.}{2019}]{Kumar2019}
+\begin{barticle}
+\bauthor{\bsnm{Kumar}, \binits{P.}},
+\bauthor{\bsnm{Rodrigo}, \binits{C.}},
+\bauthor{\bsnm{Gaspar}, \binits{F.J.}},
+\bauthor{\bsnm{Oosterlee}, \binits{C.W.}}:
+\batitle{On local {Fourier} analysis of multigrid methods for {PDEs} with
+  jumping and random coefficients}.
+\bjtitle{SIAM Journal on Scientific Computing}
+\bvolume{41}(\bissue{3}),
+\bfpage{1385}--\blpage{1413}
+(\byear{2019})
+\doiurl{10.1137/18M1173769}
+\end{barticle}
+\endbibitem
+
+%%% 12
+\bibitem[\protect\citeauthoryear{Ashburner}{2007}]{Ashburner2007}
+\begin{barticle}
+\bauthor{\bsnm{Ashburner}, \binits{J.}}:
+\batitle{A fast diffeomorphic image registration algorithm}.
+\bjtitle{NeuroImage}
+\bvolume{38}(\bissue{1}),
+\bfpage{95}--\blpage{113}
+(\byear{2007})
+\doiurl{10.1016/j.neuroimage.2007.07.007}
+\end{barticle}
+\endbibitem
+
+%%% 13
+\bibitem[\protect\citeauthoryear{Vercauteren et~al.}{2009}]{Vercauteren2009}
+\begin{barticle}
+\bauthor{\bsnm{Vercauteren}, \binits{T.}},
+\bauthor{\bsnm{Pennec}, \binits{X.}},
+\bauthor{\bsnm{Perchant}, \binits{A.}},
+\bauthor{\bsnm{Ayache}, \binits{N.}}:
+\batitle{Diffeomorphic demons: Efficient non-parametric image registration}.
+\bjtitle{NeuroImage}
+\bvolume{45}(\bissue{1}),
+\bfpage{61}--\blpage{72}
+(\byear{2009})
+\doiurl{10.1016/j.neuroimage.2008.10.040} .
+\bcomment{Supplement 1}
+\end{barticle}
+\endbibitem
+
+%%% 14
+\bibitem[\protect\citeauthoryear{Mang and Biros}{2015}]{MangBiros2015}
+\begin{barticle}
+\bauthor{\bsnm{Mang}, \binits{A.}},
+\bauthor{\bsnm{Biros}, \binits{G.}}:
+\batitle{An inexact {Newton--Krylov} algorithm for constrained diffeomorphic
+  image registration}.
+\bjtitle{SIAM Journal on Imaging Sciences}
+\bvolume{8}(\bissue{2}),
+\bfpage{1030}--\blpage{1069}
+(\byear{2015})
+\doiurl{10.1137/140984002}
+\end{barticle}
+\endbibitem
+
+%%% 15
+\bibitem[\protect\citeauthoryear{Thorley et~al.}{2021}]{Thorley2021}
+\begin{bchapter}
+\bauthor{\bsnm{Thorley}, \binits{A.}},
+\bauthor{\bsnm{Jia}, \binits{X.}},
+\bauthor{\bsnm{Chang}, \binits{H.J.}},
+\bauthor{\bsnm{Liu}, \binits{B.}},
+\bauthor{\bsnm{Bunting}, \binits{K.}},
+\bauthor{\bsnm{Stoll}, \binits{V.}},
+\bauthor{\bsnm{Marvao}, \binits{A.}},
+\bauthor{\bsnm{O'Regan}, \binits{D.P.}},
+\bauthor{\bsnm{Gkoutos}, \binits{G.}},
+\bauthor{\bsnm{Kotecha}, \binits{D.}},
+\bauthor{\bsnm{Duan}, \binits{J.}}:
+\bctitle{Nesterov accelerated {ADMM} for fast diffeomorphic image
+  registration}.
+In: \bbtitle{Medical Image Computing and Computer Assisted Intervention --
+  MICCAI 2021}.
+\bsertitle{Lecture Notes in Computer Science},
+vol. \bseriesno{12904},
+pp. \bfpage{150}--\blpage{160}.
+\bpublisher{Springer}, \blocation{???}
+(\byear{2021}).
+\doiurl{10.1007/978-3-030-87202-1_15}
+\end{bchapter}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Hering et~al.}{2023}]{Hering2023}
+\begin{barticle}
+\bauthor{\bsnm{Hering}, \binits{A.}},
+\bauthor{\bsnm{Hansen}, \binits{L.}},
+\bauthor{\bsnm{Mok}, \binits{T.C.W.}}, \betal:
+\batitle{{Learn2Reg}: Comprehensive multi-task medical image registration
+  challenge, dataset and evaluation in the era of deep learning}.
+\bjtitle{IEEE Transactions on Medical Imaging}
+\bvolume{42}(\bissue{3}),
+\bfpage{697}--\blpage{712}
+(\byear{2023})
+\doiurl{10.1109/TMI.2022.3213983}
+\end{barticle}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Borovec et~al.}{2018}]{Borovec2018}
+\begin{bchapter}
+\bauthor{\bsnm{Borovec}, \binits{J.}},
+\bauthor{\bsnm{Mu{\~n}oz-Barrutia}, \binits{A.}},
+\bauthor{\bsnm{Kybic}, \binits{J.}}:
+\bctitle{Benchmarking of image registration methods for differently stained
+  histological slides}.
+In: \bbtitle{Proceedings of the 2018 IEEE International Conference on Image
+  Processing},
+pp. \bfpage{3368}--\blpage{3372}
+(\byear{2018}).
+\doiurl{10.1109/ICIP.2018.8451040}
+\end{bchapter}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{Hern{\'a}ndez-Matas
+  et~al.}{2017}]{HernandezMatas2017}
+\begin{barticle}
+\bauthor{\bsnm{Hern{\'a}ndez-Matas}, \binits{C.}},
+\bauthor{\bsnm{Zabulis}, \binits{X.}},
+\bauthor{\bsnm{Triantafyllou}, \binits{A.}},
+\bauthor{\bsnm{Anyfanti}, \binits{P.}},
+\bauthor{\bsnm{Douma}, \binits{S.}},
+\bauthor{\bsnm{Argyros}, \binits{A.A.}}:
+\batitle{{FIRE}: Fundus image registration dataset}.
+\bjtitle{Journal for Modeling in Ophthalmology}
+\bvolume{1}(\bissue{4}),
+\bfpage{16}--\blpage{28}
+(\byear{2017})
+\doiurl{10.35119/maio.v1i4.42}
+\end{barticle}
+\endbibitem
+
+\end{thebibliography}
